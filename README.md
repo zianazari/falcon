@@ -107,7 +107,7 @@ updates, nudges and closes GitHub issues to match.
 
 ## Try it in five minutes
 
-Requirements: Go 1.25+, Node 22+, Docker. Terraform is only needed for `make tf-check`.
+Requirements: Go 1.25+, Node 22.18+, Docker. Terraform is only needed for `make tf-check`.
 
 ```bash
 make test         # all unit tests and detection fixtures, no Docker
@@ -145,7 +145,9 @@ The console is a React + shadcn/ui app with a small Node API (`console/server`).
 In GCP mode the API reads BigQuery and the Cloud Run, Logging and Pub/Sub APIs using your
 `gcloud` login, and finds the project from the Terraform outputs. It only listens on
 localhost. Those BigQuery reads are themselves audit-logged back into Falcon, so the console
-caches responses for 30 seconds and refreshes once a minute in this mode. The triager
+caches responses for 30 seconds and refreshes once a minute in this mode. Your login may hold
+far more access than the console needs, so use a read-only account for anything beyond a local
+demo. The triager
 runs on the demo data unless `TRIAGE_REPOS` and `GITHUB_TOKEN` are set; then it does a
 read-only live run.
 
@@ -237,8 +239,31 @@ cp terraform.tfvars.example terraform.tfvars   # set project_id, github_reposito
 terraform init && terraform apply
 terraform output github_actions_variables      # add these as repository variables
 ```
-After that, every push to `main` that touches `pipeline/` or `detections/` builds and rolls out
-a new revision through `.github/workflows/deploy.yml`.
+Terraform needs Google credentials, for example from `gcloud auth application-default login`.
+Set `deletion_protection = false` in `terraform.tfvars` for a test project, so that
+`terraform destroy` can remove everything later.
+
+The first apply runs a placeholder image. Once the repository variables are set, every push to
+`main` that touches `pipeline/` or `detections/` builds and rolls out a new revision through
+`.github/workflows/deploy.yml`. Before that, or from a fork, deploy by hand from the repo root:
+```bash
+REPO=$(terraform -chdir=infra/terraform/envs/dev output -raw image_repository)
+TAG=manual-$(date +%Y%m%d-%H%M%S)   # tags in this repository are immutable
+gcloud auth configure-docker europe-north1-docker.pkg.dev
+docker build --platform linux/amd64 -f pipeline/Dockerfile -t $REPO/pipeline:$TAG .
+docker push $REPO/pipeline:$TAG
+gcloud run services update falcon-pipeline --region europe-north1 --image $REPO/pipeline:$TAG
+```
+
+Falcon has been run end to end on a real GCP project: making a bucket public raised
+`gcp-bucket-made-public` 1.6 seconds after the audit event, with no false positives from the
+real events around it. That test covered this one rule. The other five are verified by their
+fixtures and the local attack replay.
+
+To remove a deployment, run `terraform destroy`. GCP keeps a deleted Workload Identity pool for
+about 30 days, so a new apply in that window can fail on the `github` pool until it is
+undeleted and imported, or given another name. The live demo is not kept running, to avoid
+idle cost.
 
 ### 2. Log pipeline (`pipeline/`, Go)
 
@@ -328,6 +353,7 @@ frame.
 - Org-level aggregated sink (`include_children`) so new projects are covered automatically
 - Stateful detections (first-seen country or ASN per actor) using BigQuery lookbacks
 - Detection metrics in the console (alert volume per rule over time, MTTA)
+- Set `cpu_idle = true` on Cloud Run, so an instance kept awake by a steady log stream is billed only while processing
 - CMEK for Pub/Sub and BigQuery; VPC Service Controls around the security dataset
 - Pin GitHub Actions to commit SHAs
 - Churned-customer data-removal monitor, and AI-assisted PR security review

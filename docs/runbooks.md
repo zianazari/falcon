@@ -28,6 +28,7 @@ Each alert links here. First steps for every alert:
 ## gcp-bucket-made-public
 - Treat this as a possible data exposure. What is in the bucket, and how long was it public?
 - Contain: remove `allUsers` / `allAuthenticatedUsers`; review the bucket's data-access logs for reads.
+- Removing access does not end the exposure at once: Google's edge cache can keep serving public objects until their `Cache-Control` expires, one hour by default. Rotate anything sensitive that was in the bucket.
 - Prevent: the org policy `storage.publicAccessPrevention`.
 
 ## gcp-audit-logging-tampered
