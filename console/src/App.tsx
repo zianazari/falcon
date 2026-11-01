@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, Bird, Bug, FileCode2, Gauge, LayoutDashboard, Moon, RefreshCw, Sun, Workflow } from "lucide-react"
+import { Activity, AlertTriangle, Bird, Bug, FileCode2, Gauge, LayoutDashboard, Moon, RefreshCw, ScrollText, Sun, Workflow } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -28,6 +28,7 @@ import { Events } from "@/pages/events"
 import { Overview } from "@/pages/overview"
 import { Pipeline } from "@/pages/pipeline"
 import { ResourcesPage } from "@/pages/resources"
+import { Rules } from "@/pages/rules"
 import { Vulnerabilities } from "@/pages/vulnerabilities"
 
 const NAV: { group: string; items: { page: Page; label: string; icon: typeof Activity }[] }[] = [
@@ -44,6 +45,7 @@ const NAV: { group: string; items: { page: Page; label: string; icon: typeof Act
       { page: "alerts", label: "Alerts", icon: AlertTriangle },
       { page: "events", label: "Events", icon: Activity },
       { page: "detections", label: "Detections", icon: FileCode2 },
+      { page: "rules", label: "Rules", icon: ScrollText },
       { page: "pipeline", label: "Pipeline", icon: Workflow },
     ],
   },
@@ -183,6 +185,7 @@ function Shell({ auto, setAuto, dark, setDark, refreshMs }: { auto: boolean; set
           {page === "alerts" && <Alerts openId={id} />}
           {page === "events" && <Events openId={id} />}
           {page === "detections" && <Detections openId={id} />}
+          {page === "rules" && <Rules openId={id} />}
           {page === "vulnerabilities" && <Vulnerabilities openId={id} />}
           {page === "pipeline" && <Pipeline />}
         </div>

@@ -3,7 +3,7 @@ import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ExpandableRows } from "@/components/expandable-rows"
-import { Code, Description, ErrorBox, KV, Loading, Markdown, Mitre, Mono, PageHeader, SeverityBadge, Status } from "@/components/falcon"
+import { Code, Description, Empty, ErrorBox, KV, Loading, Markdown, Mitre, Mono, PageHeader, SeverityBadge, Status } from "@/components/falcon"
 import { api, useApi, type DetectionTestRun, type FalconAlert, type FixtureResult, type Rule } from "@/lib/api"
 import { ago, time } from "@/lib/format"
 import { href, navigate } from "@/lib/router"
@@ -27,8 +27,8 @@ export function Detections({ openId }: { openId?: string }) {
     }
   }
 
-  const resultsFor = (id: string) => run?.results.filter((r) => r.rule === id) ?? []
-  const alertsFor = (id: string) => (alerts.data ?? []).filter((a) => a.rule_id === id)
+  // Until alerts load, an empty list would wrongly mean "nothing has fired".
+  const fired = rules.data && alerts.data && rules.data.filter((r) => alerts.data!.some((a) => a.rule_id === r.id))
   const passed = run?.results.filter((r) => r.status === "PASS").length ?? 0
 
   return (
@@ -36,7 +36,7 @@ export function Detections({ openId }: { openId?: string }) {
       <PageHeader
         icon={<FileCode2 />}
         title="Detections"
-        description="Rules are YAML files in detections/rules, reviewed like code. Each one ships with events it must fire on and near-misses it must stay quiet on; CI and the Docker build refuse a rule that misbehaves. Click a rule to see its details."
+        description={<>The rules that have raised at least one alert. Click a rule to see its details. All rules, including those that have not fired, are under <a href={href("rules")} className="text-info hover:underline">Rules</a>.</>}
         actions={
           <Button onClick={runTests} disabled={running} className="bg-section text-white hover:bg-section/90">
             {running ? <Loader2 className="animate-spin" /> : <FlaskConical />}
@@ -56,29 +56,40 @@ export function Detections({ openId }: { openId?: string }) {
       )}
 
       {rules.error && <ErrorBox error={rules.error} />}
-      {rules.loading && !rules.data && <Loading rows={6} />}
-      {rules.data && (
-        <ExpandableRows
-          items={rules.data}
-          getId={(r) => r.id}
-          openId={openId}
-          onToggle={(id) => navigate("detections", id)}
-          grid="grid-cols-[1.5rem_minmax(0,1fr)] lg:grid-cols-[1.5rem_6.5rem_minmax(0,1fr)_7rem_9rem_10rem]"
-          header={
-            <>
-              <span />
-              <span>Severity</span>
-              <span>Rule</span>
-              <span>ATT&CK</span>
-              <span>Fixtures</span>
-              <span>Activity</span>
-            </>
-          }
-          row={(r) => <RuleCells rule={r} alerts={alertsFor(r.id)} results={resultsFor(r.id)} />}
-          detail={(r) => <RuleDetail rule={r} alerts={alertsFor(r.id)} results={resultsFor(r.id)} />}
-        />
+      {alerts.error && <ErrorBox error={alerts.error} />}
+      {!fired && !rules.error && !alerts.error && <Loading rows={6} />}
+      {fired && !fired.length && (
+        <Empty title="No rule has fired yet">Every rule is still listed under <a href={href("rules")} className="text-info hover:underline">Rules</a>.</Empty>
       )}
+      {fired && fired.length > 0 && <RuleList rules={fired} alerts={alerts.data ?? []} results={run?.results ?? []} openId={openId} />}
     </div>
+  )
+}
+
+function RuleList({ rules, alerts, results, openId }: { rules: Rule[]; alerts: FalconAlert[]; results: FixtureResult[]; openId?: string }) {
+  const resultsFor = (id: string) => results.filter((r) => r.rule === id)
+  const alertsFor = (id: string) => alerts.filter((a) => a.rule_id === id)
+
+  return (
+    <ExpandableRows
+      items={rules}
+      getId={(r) => r.id}
+      openId={openId}
+      onToggle={(id) => navigate("detections", id)}
+      grid="grid-cols-[1.5rem_minmax(0,1fr)] lg:grid-cols-[1.5rem_6.5rem_minmax(0,1fr)_7rem_9rem_10rem]"
+      header={
+        <>
+          <span />
+          <span>Severity</span>
+          <span>Rule</span>
+          <span>ATT&CK</span>
+          <span>Fixtures</span>
+          <span>Activity</span>
+        </>
+      }
+      row={(r) => <RuleCells rule={r} alerts={alertsFor(r.id)} results={resultsFor(r.id)} />}
+      detail={(r) => <RuleDetail rule={r} alerts={alertsFor(r.id)} results={resultsFor(r.id)} />}
+    />
   )
 }
 

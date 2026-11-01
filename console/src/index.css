@@ -200,6 +200,7 @@ html {
 [data-section="alerts"] { --section: oklch(0.58 0.21 20); }
 [data-section="events"] { --section: oklch(0.58 0.15 240); }
 [data-section="detections"] { --section: oklch(0.55 0.2 300); }
+[data-section="rules"] { --section: oklch(0.56 0.19 340); }
 [data-section="pipeline"] { --section: oklch(0.56 0.11 180); }
 [data-section="vulnerabilities"] { --section: oklch(0.66 0.16 60); }
 .dark [data-section="overview"], .dark[data-section="overview"] { --section: oklch(0.72 0.15 270); }
@@ -207,6 +208,7 @@ html {
 .dark [data-section="alerts"] { --section: oklch(0.72 0.16 20); }
 .dark [data-section="events"] { --section: oklch(0.74 0.12 240); }
 .dark [data-section="detections"] { --section: oklch(0.73 0.15 300); }
+.dark [data-section="rules"] { --section: oklch(0.74 0.15 340); }
 .dark [data-section="pipeline"] { --section: oklch(0.75 0.1 180); }
 .dark [data-section="vulnerabilities"] { --section: oklch(0.79 0.14 65); }
 /* The sidebar is dark in both themes, so its section icons always use the bright variants. */
@@ -215,6 +217,7 @@ html {
 [data-sidebar="sidebar"] [data-section="alerts"] { --section: oklch(0.74 0.16 20); }
 [data-sidebar="sidebar"] [data-section="events"] { --section: oklch(0.76 0.12 240); }
 [data-sidebar="sidebar"] [data-section="detections"] { --section: oklch(0.75 0.15 300); }
+[data-sidebar="sidebar"] [data-section="rules"] { --section: oklch(0.76 0.15 340); }
 [data-sidebar="sidebar"] [data-section="pipeline"] { --section: oklch(0.77 0.1 180); }
 [data-sidebar="sidebar"] [data-section="vulnerabilities"] { --section: oklch(0.8 0.14 65); }
 @theme inline {
