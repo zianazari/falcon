@@ -226,7 +226,8 @@ the EPSS numbers are illustrative snapshots.
 | `log-sink` | Project sink for all Cloud Audit Logs to Pub/Sub; enables Data Access logs for Secret Manager | The sink's own writer identity can publish to one topic only |
 | `pubsub` | Topic, push subscription with OIDC auth, dead-letter topic and pull subscription | Push identity is a dedicated SA; retries back off from 10s to 600s |
 | `pipeline-run` | Cloud Run service | **Internal ingress only**; only the push SA holds `run.invoker`; Slack webhook comes from Secret Manager |
-| `bigquery` | `events`, `alerts` and `deadletter` tables, partitioned and clustered, with retention | Pipeline SA gets `dataEditor` on this dataset only, not the project |
+| `bigquery` | `events`, `alerts` and `deadletter` tables, partitioned and clustered, with retention | Pipeline SA gets `dataEditor` on this dataset only. It also holds `bigquery.jobUser`, which runs queries but grants no data, for the canary check |
+| `canary` | Cloud Scheduler jobs that write a heartbeat audit event and ask the pipeline whether it arrived | Dedicated SA that can update one topic and invoke the service. Scheduler runs in `europe-west1`, because it is not offered in `europe-north1` |
 | `ci-identity` | Workload Identity Federation for GitHub Actions and a deployer SA | **No SA keys.** Trust is pinned to `repo:<owner>/<repo>:ref:refs/heads/main`; every grant is resource-scoped |
 
 `make tf-check` runs `terraform fmt`, `terraform validate`, tflint and Checkov. Checkov passes.
@@ -255,15 +256,35 @@ docker push $REPO/pipeline:$TAG
 gcloud run services update falcon-pipeline --region europe-north1 --image $REPO/pipeline:$TAG
 ```
 
-Falcon has been run end to end on a real GCP project: making a bucket public raised
-`gcp-bucket-made-public` 1.6 seconds after the audit event, with no false positives from the
-real events around it. That test covered this one rule. The other five are verified by their
-fixtures and the local attack replay.
+### Results on a real GCP project
+
+| Check | Result |
+|---|---|
+| `gcp-bucket-made-public`, `gcp-privileged-role-granted`, `gcp-firewall-open-to-internet`, `gcp-audit-logging-tampered`, `gcp-secret-accessed-by-human` | Each raised its alert from a real action, 1.6 to 6.9 seconds after the audit event |
+| `gcp-sa-key-created` | Not tested firing: the project's organization policy blocks key creation. The denied attempt correctly raised nothing |
+| Near misses (public access removed, low-privilege role granted) | No alert |
+| Malformed message | Stored in `deadletter` |
+| Sink disabled, so canaries stopped arriving | `falcon-canary-missing` raised once across repeated checks, with a shortened 2 minute limit |
+
+**Known limit: new sinks lose events at first.** In two deployments, part of the audit events
+never reached Pub/Sub during roughly the first five minutes after the sink was created. They
+stayed in Cloud Logging, no export error was recorded, and they were not delivered later. In the
+one run measured with a separate Pub/Sub subscription, delivery was complete from 5 minutes
+20 seconds on: 24 of 24 markers over the next ten minutes. Slow IAM propagation for the sink's writer identity
+is the likely cause, but that is not proven. The canary does not close this gap: a loss
+shorter than `CANARY_MAX_AGE` raises nothing. Treat a new deployment as covered only once a
+canary event appears in the `events` table.
 
 To remove a deployment, run `terraform destroy`. GCP keeps a deleted Workload Identity pool for
-about 30 days, so a new apply in that window can fail on the `github` pool until it is
-undeleted and imported, or given another name. The live demo is not kept running, to avoid
-idle cost.
+about 30 days, so a new apply in that window fails on the `github` pool. Restore it first:
+```bash
+gcloud iam workload-identity-pools undelete github --location global
+gcloud iam workload-identity-pools providers undelete falcon --location global --workload-identity-pool github
+POOL=projects/$PROJECT_ID/locations/global/workloadIdentityPools/github
+terraform import module.ci.google_iam_workload_identity_pool.github $POOL
+terraform import module.ci.google_iam_workload_identity_pool_provider.github $POOL/providers/falcon
+```
+The live demo is not kept running, to avoid idle cost.
 
 ### 2. Log pipeline (`pipeline/`, Go)
 
@@ -280,8 +301,14 @@ Delivery semantics, which the tests cover:
 | Sink (BigQuery) failure | `500` | Pub/Sub retries; after 5 attempts the message goes to the dead-letter topic |
 | Redelivered event | `204`, skipped | Bounded dedup cache keyed on `insertId`, which is also the BigQuery insert ID |
 | Slack failure | Logged | The alert is already persisted; one message's alerting must not block the stream |
+| Audit events stop arriving | `falcon-canary-missing` alert | Nothing fails visibly, so a heartbeat proves the path works (see below) |
 
 `GET /stats` reports counters; `GET /healthz` is the health check.
+
+**Canary.** Rules cannot see an event that never arrives, and Cloud Logging can drop exports
+without any error. Every five minutes a scheduled job updates the `falcon-canary` topic, which
+writes an audit entry, and a second job calls `POST /canary/check`. If no canary has landed in
+the last 15 minutes (`CANARY_MAX_AGE`), Falcon raises one `falcon-canary-missing` alert per outage.
 
 ### 3. Detections as code (`detections/`)
 

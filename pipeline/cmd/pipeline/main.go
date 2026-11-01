@@ -9,6 +9,7 @@
 //	BQ_PROJECT         BigQuery project for SINK=bigquery
 //	BQ_DATASET         BigQuery dataset for SINK=bigquery
 //	SLACK_WEBHOOK_URL  optional; alerts are also posted to Slack
+//	CANARY_MAX_AGE     optional; how old the last canary may be (default 15m)
 package main
 
 import (
@@ -83,6 +84,11 @@ func run(log *slog.Logger) error {
 	}
 
 	srv := server.New(eng, s, notifiers, log, 10_000)
+	if v := os.Getenv("CANARY_MAX_AGE"); v != "" {
+		if srv.CanaryMaxAge, err = time.ParseDuration(v); err != nil {
+			return fmt.Errorf("CANARY_MAX_AGE: %w", err)
+		}
+	}
 	httpSrv := &http.Server{
 		Addr:              ":" + env("PORT", "8080"),
 		Handler:           srv.Handler(),

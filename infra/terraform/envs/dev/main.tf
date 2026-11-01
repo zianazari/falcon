@@ -2,6 +2,7 @@ locals {
   apis = [
     "artifactregistry.googleapis.com",
     "bigquery.googleapis.com",
+    "cloudscheduler.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "iam.googleapis.com",
     "iamcredentials.googleapis.com",
@@ -94,6 +95,23 @@ module "log_sink" {
   source     = "../../modules/log-sink"
   project_id = var.project_id
   topic_id   = module.pubsub.topic_id
+}
+
+module "canary" {
+  source        = "../../modules/canary"
+  project_id    = var.project_id
+  region        = var.region
+  pipeline_uri  = module.pipeline.uri
+  pipeline_name = module.pipeline.name
+  depends_on    = [google_project_service.apis]
+}
+
+# The canary check reads the events table, and running a query needs a project-level role.
+resource "google_project_iam_member" "pipeline_query" {
+  #checkov:skip=CKV_GCP_41:bigquery.jobUser grants no data access; data stays scoped to the dataset.
+  project = var.project_id
+  role    = "roles/bigquery.jobUser"
+  member  = "serviceAccount:${google_service_account.pipeline.email}"
 }
 
 module "ci" {

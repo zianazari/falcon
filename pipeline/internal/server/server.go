@@ -7,6 +7,11 @@
 //   - sink failure: 500, so Pub/Sub retries. After max attempts the
 //     subscription's dead-letter topic takes the message.
 //   - notifier failure: logged only. The alert is already persisted.
+//
+// POST /canary/check covers what no rule can see: audit events that never
+// arrive. Cloud Logging drops exports without any error, for example for several
+// minutes after a sink is created. A scheduled heartbeat updates the canary topic,
+// which writes an audit entry; if none has landed recently, Falcon raises an alert.
 package server
 
 import (
@@ -26,16 +31,30 @@ import (
 	"falcon/pipeline/internal/sink"
 )
 
+// The audit event the scheduled heartbeat produces.
+const (
+	CanaryAction   = "google.pubsub.v1.Publisher.UpdateTopic"
+	CanaryResource = "/topics/falcon-canary"
+	canaryRule     = "falcon-canary-missing"
+)
+
+// DefaultCanaryMaxAge allows two missed five-minute heartbeats plus export delay.
+const DefaultCanaryMaxAge = 15 * time.Minute
+
 // Server processes Pub/Sub push requests.
 type Server struct {
-	Engine   *detect.Engine
-	Sink     sink.Sink
-	Notifier alert.Notifier
-	Log      *slog.Logger
-	Now      func() time.Time
+	Engine       *detect.Engine
+	Sink         sink.Sink
+	Notifier     alert.Notifier
+	Log          *slog.Logger
+	Now          func() time.Time
+	CanaryMaxAge time.Duration
 
 	dedup *dedup
 	stats stats
+
+	canaryMu      sync.Mutex
+	canaryAlerted string // alert ID of the outage already raised
 }
 
 type stats struct {
@@ -48,13 +67,17 @@ type stats struct {
 
 // New wires a server. dedupSize bounds how many recent event IDs are remembered.
 func New(eng *detect.Engine, s sink.Sink, n alert.Notifier, log *slog.Logger, dedupSize int) *Server {
-	return &Server{Engine: eng, Sink: s, Notifier: n, Log: log, Now: time.Now, dedup: newDedup(dedupSize)}
+	return &Server{
+		Engine: eng, Sink: s, Notifier: n, Log: log, Now: time.Now,
+		CanaryMaxAge: DefaultCanaryMaxAge, dedup: newDedup(dedupSize),
+	}
 }
 
 // Handler returns the HTTP routes.
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /pubsub/push", s.handlePush)
+	mux.HandleFunc("POST /canary/check", s.handleCanary)
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("ok")) })
 	mux.HandleFunc("GET /stats", s.handleStats)
 	return mux
@@ -125,6 +148,60 @@ func (s *Server) Process(ctx context.Context, messageID string, data []byte) err
 		if err := s.Notifier.Notify(ctx, a); err != nil {
 			s.Log.Error("notify failed", "rule_id", a.RuleID, "err", err)
 		}
+	}
+	return nil
+}
+
+// handleCanary alerts once per outage. It answers 200 either way, because a
+// missing canary is a finding, not a failed request; only a failed lookup is a 500.
+func (s *Server) handleCanary(w http.ResponseWriter, r *http.Request) {
+	last, err := s.Sink.LastEvent(r.Context(), CanaryAction, CanaryResource)
+	if err != nil {
+		s.Log.Error("canary lookup failed", "err", err)
+		http.Error(w, "canary lookup failed", http.StatusInternalServerError)
+		return
+	}
+	now := s.Now().UTC()
+	healthy := !last.IsZero() && now.Sub(last) <= s.CanaryMaxAge
+	if !healthy {
+		if err := s.raiseCanaryAlert(r.Context(), last, now); err != nil {
+			s.Log.Error("canary alert failed", "err", err)
+			http.Error(w, "canary alert failed", http.StatusInternalServerError)
+			return
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"healthy": healthy, "last_canary": last})
+}
+
+func (s *Server) raiseCanaryAlert(ctx context.Context, last, now time.Time) error {
+	seen := "never"
+	description := "No canary audit event has reached Falcon yet."
+	if !last.IsZero() {
+		seen = last.UTC().Format(time.RFC3339)
+		description = "The last canary audit event reached Falcon at " + seen + "."
+	}
+	id := canaryRule + ":" + seen
+
+	s.canaryMu.Lock()
+	defer s.canaryMu.Unlock()
+	if s.canaryAlerted == id {
+		return nil
+	}
+	a := event.Alert{
+		ID: id, RuleID: canaryRule, Title: "Audit log canary is missing", Severity: "high",
+		Mitre: []string{"T1562.008"}, Runbook: "docs/runbooks.md#" + canaryRule,
+		EventID: id, EventTime: now, DetectedAt: now, Action: CanaryAction, Resource: CanaryResource,
+		Description: description + " Audit events may not be arriving, so detections may be blind.",
+	}
+	if err := s.Sink.WriteAlerts(ctx, []event.Alert{a}); err != nil {
+		return err
+	}
+	s.canaryAlerted = id
+	s.stats.Alerts.Add(1)
+	s.Log.Warn("alert", "rule_id", a.RuleID, "severity", a.Severity, "event_id", a.EventID)
+	if err := s.Notifier.Notify(ctx, a); err != nil {
+		s.Log.Error("notify failed", "rule_id", a.RuleID, "err", err)
 	}
 	return nil
 }

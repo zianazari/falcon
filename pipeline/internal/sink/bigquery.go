@@ -2,9 +2,11 @@ package sink
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"google.golang.org/api/iterator"
 
 	"falcon/pipeline/internal/event"
 )
@@ -13,6 +15,7 @@ import (
 // Table schemas live in infra/terraform/modules/bigquery/schemas.
 type BigQuery struct {
 	client                     *bigquery.Client
+	dataset                    string
 	events, alerts, deadletter *bigquery.Inserter
 }
 
@@ -25,6 +28,7 @@ func NewBigQuery(ctx context.Context, project, dataset string) (*BigQuery, error
 	ds := client.Dataset(dataset)
 	return &BigQuery{
 		client:     client,
+		dataset:    dataset,
 		events:     ds.Table("events").Inserter(),
 		alerts:     ds.Table("alerts").Inserter(),
 		deadletter: ds.Table("deadletter").Inserter(),
@@ -117,6 +121,26 @@ type deadLetterRow struct {
 // WriteDeadLetter implements Sink.
 func (b *BigQuery) WriteDeadLetter(ctx context.Context, dl event.DeadLetter) error {
 	return b.deadletter.Put(ctx, &bigquery.StructSaver{Struct: deadLetterRow(dl), InsertID: dl.MessageID})
+}
+
+// LastEvent implements Sink. It looks back two days, which also keeps the query
+// inside recent partitions of the events table.
+func (b *BigQuery) LastEvent(ctx context.Context, action, resourceSuffix string) (time.Time, error) {
+	q := b.client.Query("SELECT MAX(ts) AS last FROM `" + b.dataset + "`.events " +
+		"WHERE ts > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 2 DAY) " +
+		"AND action = @action AND ENDS_WITH(resource, @suffix)")
+	q.Parameters = []bigquery.QueryParameter{{Name: "action", Value: action}, {Name: "suffix", Value: resourceSuffix}}
+	it, err := q.Read(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+	var row struct {
+		Last bigquery.NullTimestamp `bigquery:"last"`
+	}
+	if err := it.Next(&row); err != nil && !errors.Is(err, iterator.Done) {
+		return time.Time{}, err
+	}
+	return row.Last.Timestamp, nil
 }
 
 // Close implements Sink.

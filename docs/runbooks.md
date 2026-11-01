@@ -44,3 +44,9 @@ Each alert links here. First steps for every alert:
 ## gcp-secret-accessed-by-human
 - Is the person on call and debugging? Confirm with them directly.
 - If you can't confirm it, rotate the secret and investigate the account.
+
+## falcon-canary-missing
+- Falcon may be blind: audit events may not be reaching the pipeline, so a missing alert proves nothing right now.
+- Check in order: the sink exists and is enabled, the Pub/Sub subscription has no backlog, the Cloud Run service is healthy, and the Scheduler heartbeat job is succeeding.
+- If the sink was just created, wait about five minutes. Events can be lost during this window and are not resent.
+- Read Cloud Audit Logs directly in Logs Explorer for the gap, because those events never reached the `events` table. Treat a sink that someone changed as `gcp-audit-logging-tampered`.

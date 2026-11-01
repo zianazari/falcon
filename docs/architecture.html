@@ -163,6 +163,7 @@ ol.steps { margin: 0; padding-inline-start: 26px; display: grid; gap: 8px; max-w
         <tr><td><b>Console UI</b><br><code>console/src</code></td><td>Shows every part in one place</td><td>React 19, Vite 8, Tailwind 4, shadcn/ui, Recharts</td><td><span class="tag t-mac">Port 5173</span></td></tr>
         <tr><td><b>Console API</b><br><code>console/server</code></td><td>Reads data from GCP and the repository</td><td>TypeScript on Node, no framework</td><td><span class="tag t-mac">Port 8090, localhost only</span></td></tr>
         <tr><td><b>Attack simulator</b><br><code>simulator/</code></td><td>Replays an attack and verifies the result locally</td><td>Go, Pub/Sub emulator</td><td><span class="tag t-mac"><code>make attack</code></span></td></tr>
+        <tr><td><b>Canary</b><br><code>modules/canary</code></td><td>Proves audit events still arrive</td><td>Cloud Scheduler, Terraform, a Go check in the pipeline</td><td><span class="tag t-gcp">GCP, europe-west1</span></td></tr>
         <tr><td><b>CI workflows</b><br><code>.github/workflows</code></td><td>Tests, daily triage, keyless deploy</td><td>GitHub Actions, Workload Identity Federation</td><td><span class="tag t-hub">ci active; triage and deploy skip</span></td></tr>
       </tbody>
     </table></div>
@@ -191,7 +192,7 @@ ol.steps { margin: 0; padding-inline-start: 26px; display: grid; gap: 8px; max-w
     <div class="flows">
       <div>
         <h3>Flow 1: from a risky action to an alert</h3>
-        <p>This flow was tested on a real GCP project. Making a bucket public raised an alert 1.6 seconds after the audit event.</p>
+        <p>This flow was tested on a real GCP project. Five rules raised their alerts from real actions, 1.6 to 6.9 seconds after the audit event. During roughly the first five minutes after the sink is created, part of the events never reach Pub/Sub.</p>
         <ol class="steps">
           <li>Someone acts in GCP, for example by granting <code>allUsers</code> read access to a bucket.</li>
           <li>GCP records the action in Cloud Audit Logs.</li>
@@ -249,7 +250,17 @@ ol.steps { margin: 0; padding-inline-start: 26px; display: grid; gap: 8px; max-w
         <p>Each console query creates an audit log entry, which comes back through flow 1. BigQuery events therefore keep rising in the Events page while the console is open in GCP mode.</p>
       </div>
       <div>
-        <h3>Flow 4: from code to GCP</h3>
+        <h3>Flow 4: the canary</h3>
+        <p>Rules cannot see an event that never arrives, so a heartbeat proves the path works.</p>
+        <ol class="steps">
+          <li>Every five minutes Cloud Scheduler updates the <code>falcon-canary</code> topic, which writes an audit entry.</li>
+          <li>The entry follows flow 1 into the <code>events</code> table.</li>
+          <li>A second job calls <code>POST /canary/check</code> on the pipeline.</li>
+          <li>If no canary landed in the last 15 minutes, the pipeline raises one <code>falcon-canary-missing</code> alert for the outage.</li>
+        </ol>
+      </div>
+      <div>
+        <h3>Flow 5: from code to GCP</h3>
         <ol class="steps">
           <li>Terraform creates the resources.</li>
           <li>Docker builds the pipeline image for <code>linux/amd64</code>. Tests and rule fixtures run during this build.</li>
@@ -266,7 +277,8 @@ ol.steps { margin: 0; padding-inline-start: 26px; display: grid; gap: 8px; max-w
       <li>Only the <code>ci</code> workflow runs. <code>triage</code> and <code>deploy</code> skip until their variables are set.</li>
       <li>Slack delivery is untested, because no webhook has been configured.</li>
       <li>The triager has not run against a live repository, so the console shows demo data.</li>
-      <li>Only the public-bucket rule was tested by a real action on GCP. The other five rules are verified by fixtures and the local attack replay.</li>
+      <li><code>gcp-sa-key-created</code> was not tested firing on GCP, because an organization policy blocks key creation. It is verified by fixtures and the local attack replay.</li>
+      <li>New log sinks lost part of the events for about five minutes. The canary does not catch a gap shorter than its 15 minute limit, so a new deployment counts as covered only once a canary event arrives.</li>
       <li>Terraform state is local and has not moved to a shared bucket.</li>
       <li>GCP keeps a deleted Workload Identity pool for about 30 days, which can block a new apply until it is undeleted or renamed.</li>
     </ul>
