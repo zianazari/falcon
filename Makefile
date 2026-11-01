@@ -30,7 +30,8 @@ triager/node_modules: triager/package-lock.json
 ## ---- Live pipeline demo (Docker) ----
 .PHONY: up attack e2e logs alerts down
 up: ## Start the Pub/Sub emulator and the pipeline, and wire the push subscription
-	@mkdir -p .data
+	@# The container runs as nonroot, so on Linux it needs write access to this bind mount.
+	@mkdir -p .data && chmod 0777 .data
 	docker compose up -d --build --wait
 	go run ./simulator setup
 
