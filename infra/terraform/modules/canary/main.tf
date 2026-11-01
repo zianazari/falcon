@@ -25,6 +25,11 @@ variable "pipeline_name" {
   type = string
 }
 
+variable "name_suffix" {
+  type        = string
+  description = "Keeps service account names unique across deployments."
+}
+
 variable "schedule" {
   type    = string
   default = "*/5 * * * *"
@@ -32,7 +37,7 @@ variable "schedule" {
 
 resource "google_service_account" "canary" {
   project      = var.project_id
-  account_id   = "falcon-canary"
+  account_id   = "falcon-canary-${var.name_suffix}"
   display_name = "Falcon audit log canary"
 }
 

@@ -21,17 +21,24 @@ resource "google_project_service" "apis" {
   disable_on_destroy = false
 }
 
+# Service accounts get a new name on every deployment. Reusing the name of a recently
+# deleted account left canary jobs alternating between success and 401/403 for at least
+# 18 minutes, while a never-used name was stable within three.
+resource "random_id" "sa_suffix" {
+  byte_length = 2
+}
+
 # One identity per job, each with only the grants it needs.
 resource "google_service_account" "pipeline" {
   project      = var.project_id
-  account_id   = "falcon-pipeline"
+  account_id   = "falcon-pipeline-${random_id.sa_suffix.hex}"
   display_name = "Falcon pipeline runtime"
   depends_on   = [google_project_service.apis]
 }
 
 resource "google_service_account" "pusher" {
   project      = var.project_id
-  account_id   = "falcon-pubsub-pusher"
+  account_id   = "falcon-pubsub-pusher-${random_id.sa_suffix.hex}"
   display_name = "Falcon Pub/Sub push identity (run.invoker only)"
   depends_on   = [google_project_service.apis]
 }
@@ -103,6 +110,7 @@ module "canary" {
   region        = var.region
   pipeline_uri  = module.pipeline.uri
   pipeline_name = module.pipeline.name
+  name_suffix   = random_id.sa_suffix.hex
   depends_on    = [google_project_service.apis]
 }
 
@@ -122,4 +130,5 @@ module "ci" {
   run_service_name           = module.pipeline.name
   artifact_repository_id     = google_artifact_registry_repository.falcon.repository_id
   runtime_service_account_id = google_service_account.pipeline.name
+  name_suffix                = random_id.sa_suffix.hex
 }

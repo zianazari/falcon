@@ -13,6 +13,11 @@ variable "github_repository" {
 variable "run_service_name" { type = string }
 variable "artifact_repository_id" { type = string }
 
+variable "name_suffix" {
+  type        = string
+  description = "Keeps service account names unique across deployments."
+}
+
 variable "runtime_service_account_id" {
   type        = string
   description = "Full ID of the pipeline service account (the deployer must act as it)."
@@ -48,7 +53,7 @@ resource "google_iam_workload_identity_pool_provider" "github" {
 
 resource "google_service_account" "deployer" {
   project      = var.project_id
-  account_id   = "falcon-deployer"
+  account_id   = "falcon-deployer-${var.name_suffix}"
   display_name = "Falcon CI deployer"
 }
 
