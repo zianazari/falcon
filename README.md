@@ -269,14 +269,18 @@ gcloud run services update falcon-pipeline --region europe-north1 --image $REPO/
 | Malformed message | Stored in `deadletter` |
 | Sink disabled, so canaries stopped arriving | `falcon-canary-missing` raised once across repeated checks, with a shortened 2 minute limit |
 
-**Known limit: new sinks lose events at first.** In two deployments, part of the audit events
-never reached Pub/Sub during roughly the first five minutes after the sink was created. They
-stayed in Cloud Logging, no export error was recorded, and they were not delivered later. In the
-one run measured with a separate Pub/Sub subscription, delivery was complete from 5 minutes
-20 seconds on: 24 of 24 markers over the next ten minutes. Slow IAM propagation for the sink's writer identity
-is the likely cause, but that is not proven. The canary does not close this gap: a loss
-shorter than `CANARY_MAX_AGE` raises nothing. Treat a new deployment as covered only once a
-canary event appears in the `events` table.
+**Known limit: a new sink can lose events at first.** Just after the sink is created, some audit
+events never reach Pub/Sub. They stay in Cloud Logging, no export error is recorded, and they
+are not delivered later. The loss lasted about five minutes in two deployments. In the latest
+one, measured with a separate Pub/Sub subscription, the only lost marker came one minute after
+the sink was created, and 25 of 25 arrived from two minutes on. The cause is not known. The canary
+does not close this gap: a loss shorter than `CANARY_MAX_AGE` raises nothing. Treat a new
+deployment as covered only once a canary event appears in the `events` table.
+
+**Why service accounts get a random suffix.** After a redeploy that reused the name of a deleted
+service account, the canary jobs alternated between success and 401/403 for at least 18 minutes.
+With a never-used name they settled within three minutes, so Terraform now generates a new
+suffix for each deployment.
 
 To remove a deployment, run `terraform destroy`. GCP keeps a deleted Workload Identity pool for
 about 30 days, so a new apply in that window fails on the `github` pool. Restore it first:

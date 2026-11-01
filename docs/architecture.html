@@ -171,18 +171,18 @@ ol.steps { margin: 0; padding-inline-start: 26px; display: grid; gap: 8px; max-w
 
   <section>
     <h2>How the parts connect</h2>
-    <p>The system stores no key files. Each connection uses a specific identity, and access is scoped as narrowly as the service allows.</p>
+    <p>The system stores no key files. Each connection uses a specific identity, and access is scoped as narrowly as the service allows. The <code>*</code> in a service account name is a random suffix, new for each deployment, because reusing a recently deleted name caused repeated 401 and 403 errors.</p>
     <div class="tw"><table>
       <thead><tr><th>From</th><th>To</th><th>Connection</th><th>Identity and access</th></tr></thead>
       <tbody>
         <tr><td>Cloud Audit Logs</td><td>Pub/Sub</td><td>Log sink with an audit log filter</td><td>The sink's writer identity, allowed to publish to one topic</td></tr>
-        <tr><td>Pub/Sub</td><td>Cloud Run</td><td>HTTP push to <code>/pubsub/push</code> with an OIDC token</td><td>Dedicated <code>falcon-pubsub-pusher</code>, holding only <code>run.invoker</code></td></tr>
-        <tr><td>Cloud Run</td><td>BigQuery</td><td>BigQuery API, with <code>insertId</code> to prevent duplicates</td><td><code>falcon-pipeline</code>, holding <code>dataEditor</code> on one dataset</td></tr>
+        <tr><td>Pub/Sub</td><td>Cloud Run</td><td>HTTP push to <code>/pubsub/push</code> with an OIDC token</td><td>Dedicated <code>falcon-pubsub-pusher-*</code>, holding only <code>run.invoker</code></td></tr>
+        <tr><td>Cloud Run</td><td>BigQuery</td><td>BigQuery API, with <code>insertId</code> to prevent duplicates</td><td><code>falcon-pipeline-*</code>, holding <code>dataEditor</code> on one dataset</td></tr>
         <tr><td>Console API</td><td>BigQuery, Cloud Run, Logging, Pub/Sub</td><td>REST APIs with a ten-minute token from <code>gcloud</code></td><td>The operator's own login. The code only reads, but the token carries all of that account's access, so use a read-only account beyond a local demo</td></tr>
         <tr><td>Browser</td><td>Console API</td><td>Vite proxy on <code>/api</code></td><td>Localhost only, no authentication</td></tr>
         <tr><td>Console API</td><td>Triager and rule files</td><td>Runs the CLI and reads repository files</td><td>The local operating system user</td></tr>
         <tr><td>Terraform and Docker</td><td>GCP</td><td>Run by hand from the developer machine</td><td>The operator's short-lived credentials</td></tr>
-        <tr><td>GitHub Actions</td><td>GCP</td><td>Workload Identity Federation, no keys</td><td><code>falcon-deployer</code>, trusted only for the repository's <code>main</code> branch</td></tr>
+        <tr><td>GitHub Actions</td><td>GCP</td><td>Workload Identity Federation, no keys</td><td><code>falcon-deployer-*</code>, trusted only for the repository's <code>main</code> branch</td></tr>
       </tbody>
     </table></div>
   </section>
@@ -192,7 +192,7 @@ ol.steps { margin: 0; padding-inline-start: 26px; display: grid; gap: 8px; max-w
     <div class="flows">
       <div>
         <h3>Flow 1: from a risky action to an alert</h3>
-        <p>This flow was tested on a real GCP project. Five rules raised their alerts from real actions, 1.6 to 6.9 seconds after the audit event. During roughly the first five minutes after the sink is created, part of the events never reach Pub/Sub.</p>
+        <p>This flow was tested on a real GCP project. Five rules raised their alerts from real actions, 1.6 to 6.9 seconds after the audit event. Just after the sink is created, some events can fail to reach Pub/Sub.</p>
         <ol class="steps">
           <li>Someone acts in GCP, for example by granting <code>allUsers</code> read access to a bucket.</li>
           <li>GCP records the action in Cloud Audit Logs.</li>
@@ -279,7 +279,7 @@ ol.steps { margin: 0; padding-inline-start: 26px; display: grid; gap: 8px; max-w
       <li>Slack delivery is untested, because no webhook has been configured.</li>
       <li>The triager has not run against a live repository, so the console shows demo data.</li>
       <li><code>gcp-sa-key-created</code> was not tested firing on GCP, because an organization policy blocks key creation. It is verified by fixtures and the local attack replay.</li>
-      <li>New log sinks lost part of the events for about five minutes. The canary does not catch a gap shorter than its 15 minute limit, so a new deployment counts as covered only once a canary event arrives.</li>
+      <li>New log sinks can lose events at first: about five minutes in two deployments, and one marker in the latest. The cause is not known. The canary does not catch a gap shorter than its 15 minute limit, so a new deployment counts as covered only once a canary event arrives.</li>
       <li>Terraform state is local and has not moved to a shared bucket.</li>
       <li>GCP keeps a deleted Workload Identity pool for about 30 days, which can block a new apply until it is undeleted or renamed.</li>
     </ul>
