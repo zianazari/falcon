@@ -79,6 +79,7 @@ Each row is a rule in [`detections/rules/`](detections/rules/), triggered by a r
 | High | `gcp-privileged-role-granted` | `owner`, `editor`, security admin, org admin, or a role that can mint service account credentials was added to a principal | Privilege escalation or a backdoor account, often granted to an outside address | T1098.003 |
 | High | `gcp-sa-key-created` | A long-lived key was created for a service account | Keys are easy to steal and live forever; Falcon's own CI uses keyless Workload Identity, so any new key needs a reason | T1098.001 |
 | High | `gcp-firewall-open-to-internet` | An ingress firewall rule was created or changed to allow `0.0.0.0/0` | SSH, RDP or a database is exposed to the whole internet | T1562.007 |
+| High | `falcon-canary-job-failed` | A Cloud Scheduler job behind the canary failed | The canary cannot report missing audit logs until it recovers, so an outage could go unnoticed | T1562.008 |
 | Medium | `gcp-secret-accessed-by-human` | A person (not a workload) read a Secret Manager secret value | Workloads read secrets, people rarely should; it may be a compromised account harvesting credentials | T1555 |
 
 Just as important is what does **not** alert: denied attempts, keys being deleted, public
@@ -190,7 +191,7 @@ Alerts raised:
   [HIGH    ] gcp-sa-key-created               actor=mallory@corp.example  mitre=T1098.001
   [MEDIUM  ] gcp-secret-accessed-by-human     actor=mallory@corp.example  mitre=T1555
 
-Pipeline stats: {"alerts":6,"dead_lettered":1,"duplicates":0,"errors":0,"processed":46,"rules":6}
+Pipeline stats: {"alerts":6,"dead_lettered":1,"duplicates":0,"errors":0,"processed":46,"rules":7}
 Detected 6/6 attack steps, 0 false positives on 40 benign events, poison message dead-lettered: true
 PASS: end-to-end check succeeded
 ```
@@ -311,14 +312,17 @@ Delivery semantics, which the tests cover:
 without any error. Every five minutes a scheduled job updates the `falcon-canary` topic, which
 writes an audit entry, and a second job calls `POST /canary/check`. If no canary has landed in
 the last 15 minutes (`CANARY_MAX_AGE`), Falcon raises one `falcon-canary-missing` alert per outage.
+If a Scheduler job itself fails, the log sink also ships that failure and the
+`falcon-canary-job-failed` rule raises an alert. That rule needs the sink, Pub/Sub and the
+pipeline to be working, so it cannot report a total outage of that path.
 
 ### 3. Detections as code (`detections/`)
 
-Six rules, each mapped to MITRE ATT&CK. Each must ship with fixtures that should and
+Seven rules, each mapped to MITRE ATT&CK. Each must ship with fixtures that should and
 should not fire. See [detections/README.md](detections/README.md) for the rule language.
 
 ```bash
-make detect-test                                    # 26 fixtures, CI gate
+make detect-test                                    # 30 fixtures, CI gate
 cd pipeline && go run ./cmd/detect run ../detections/tests/gcp-sa-key-created/should_fire/user-creates-key.json
 ```
 

@@ -1,0 +1,16 @@
+id: falcon-canary-job-failed
+title: Audit log canary job failed
+description: >
+  A Cloud Scheduler job behind the canary failed. Until it recovers, the canary
+  cannot report missing audit logs, so an outage could go unnoticed.
+severity: high
+mitre: [T1562.008]
+runbook: docs/runbooks.md#falcon-canary-job-failed
+match:
+  all:
+    - field: raw.resource.type
+      equals: cloud_scheduler_job
+    - field: raw.resource.labels.job_id
+      starts_with: falcon-canary-
+    - field: severity
+      equals: ERROR

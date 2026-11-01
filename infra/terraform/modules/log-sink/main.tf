@@ -18,8 +18,8 @@ variable "name" {
 
 variable "filter" {
   type        = string
-  description = "Logging query for what to ship. Default: all audit logs (admin activity, data access, system event, policy denied)."
-  default     = "logName:\"cloudaudit.googleapis.com\""
+  description = "Logging query for what to ship. Default: all audit logs, plus failed Cloud Scheduler runs so a broken canary job raises an alert."
+  default     = "logName:\"cloudaudit.googleapis.com\" OR (resource.type=\"cloud_scheduler_job\" AND severity>=ERROR)"
 }
 
 variable "data_access_services" {

@@ -158,7 +158,7 @@ ol.steps { margin: 0; padding-inline-start: 26px; display: grid; gap: 8px; max-w
       <tbody>
         <tr><td><b>Infrastructure</b><br><code>infra/terraform</code></td><td>Creates every GCP resource</td><td>Terraform (HCL), tflint, Checkov</td><td><span class="tag t-gcp">GCP, 37 resources</span></td></tr>
         <tr><td><b>Log pipeline</b><br><code>pipeline/</code></td><td>Normalizes logs, runs rules, stores results, raises alerts</td><td>Go 1.25, BigQuery client, distroless Docker image</td><td><span class="tag t-gcp">Cloud Run</span><br><span class="tag t-mac">Docker locally</span></td></tr>
-        <tr><td><b>Detection rules</b><br><code>detections/</code></td><td>Six rules and 26 test fixtures</td><td>YAML rules, JSON fixtures, run by the Go engine</td><td><span class="tag t-gcp">Inside the pipeline image</span></td></tr>
+        <tr><td><b>Detection rules</b><br><code>detections/</code></td><td>Seven rules and 30 test fixtures</td><td>YAML rules, JSON fixtures, run by the Go engine</td><td><span class="tag t-gcp">Inside the pipeline image</span></td></tr>
         <tr><td><b>Vulnerability triager</b><br><code>triager/</code></td><td>Scores alerts and manages issues</td><td>TypeScript on Node, Octokit, EPSS and CISA KEV data</td><td><span class="tag t-hub">GitHub Actions</span><br><span class="tag t-mac">CLI with demo data</span></td></tr>
         <tr><td><b>Console UI</b><br><code>console/src</code></td><td>Shows every part in one place</td><td>React 19, Vite 8, Tailwind 4, shadcn/ui, Recharts</td><td><span class="tag t-mac">Port 5173</span></td></tr>
         <tr><td><b>Console API</b><br><code>console/server</code></td><td>Reads data from GCP and the repository</td><td>TypeScript on Node, no framework</td><td><span class="tag t-mac">Port 8090, localhost only</span></td></tr>
@@ -257,6 +257,7 @@ ol.steps { margin: 0; padding-inline-start: 26px; display: grid; gap: 8px; max-w
           <li>The entry follows flow 1 into the <code>events</code> table.</li>
           <li>A second job calls <code>POST /canary/check</code> on the pipeline.</li>
           <li>If no canary landed in the last 15 minutes, the pipeline raises one <code>falcon-canary-missing</code> alert for the outage.</li>
+          <li>If a Scheduler job fails, the sink ships that failure and the <code>falcon-canary-job-failed</code> rule raises an alert.</li>
         </ol>
       </div>
       <div>

@@ -86,7 +86,7 @@ text{white-space:pre;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","No
 <g class="k30" style="transform-box:fill-box;transform-origin:center"><text x="284" y="430" class="ok b" font-size="14">✓</text></g>
 <g class="k31" style="transform-box:fill-box;transform-origin:center"><text x="284" y="449" class="ok b" font-size="14">✓</text></g>
 <g class="k32" style="transform-box:fill-box;transform-origin:center"><rect x="186" y="384" width="84" height="30" rx="5" class="alertbg"/><text x="228" y="404" class="b" text-anchor="middle" style="fill:#fff">MATCH</text></g>
-<text x="30" y="480" class="sub">6 rules, 26 fixtures, all run in CI</text>
+<text x="30" y="480" class="sub">7 rules, 30 fixtures, all run in CI</text>
 <text x="30" y="495" class="sub">and in the Docker build</text>
 </g>
 <g class="k33"><rect x="331" y="290" width="298" height="210" rx="10" class="card k34"/><circle cx="353" cy="312" r="11" class="num"/><text x="353" y="316" class="numt" text-anchor="middle">5</text><text x="371" y="317" class="ct">A human is alerted</text>

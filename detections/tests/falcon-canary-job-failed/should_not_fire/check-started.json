@@ -1,0 +1,21 @@
+{
+  "insertId": "fx-canaryjob-3",
+  "logName": "projects/falcon-demo-prod/logs/cloudscheduler.googleapis.com%2Fexecutions",
+  "timestamp": "2026-10-01T12:00:00.000Z",
+  "receiveTimestamp": "2026-10-01T12:00:00.000Z",
+  "severity": "INFO",
+  "resource": {
+    "type": "cloud_scheduler_job",
+    "labels": {
+      "job_id": "falcon-canary-check",
+      "location": "europe-west1",
+      "project_id": "falcon-demo-prod"
+    }
+  },
+  "jsonPayload": {
+    "@type": "type.googleapis.com/google.cloud.scheduler.logging.AttemptFinished",
+    "jobName": "projects/falcon-demo-prod/locations/europe-west1/jobs/falcon-canary-check",
+    "targetType": "HTTP",
+    "url": "https://falcon-pipeline.example.run.app/canary/check"
+  }
+}

@@ -50,3 +50,9 @@ Each alert links here. First steps for every alert:
 - Check in order: the sink exists and is enabled, the Pub/Sub subscription has no backlog, the Cloud Run service is healthy, and the Scheduler heartbeat job is succeeding.
 - If the sink was just created, wait about five minutes. Events can be lost during this window and are not resent.
 - Read Cloud Audit Logs directly in Logs Explorer for the gap, because those events never reached the `events` table. Treat a sink that someone changed as `gcp-audit-logging-tampered`.
+
+## falcon-canary-job-failed
+- The canary may be unable to report missing audit logs until this job recovers.
+- Read the job's log for the status: `PERMISSION_DENIED` or `UNAUTHENTICATED` points at the canary service account, a 5xx at the pipeline.
+- One failure in the first minutes after a deployment is normal while permissions take effect. Act if the next scheduled run also fails.
+- An attacker may be disabling the canary, so review recent IAM changes on the canary service account.

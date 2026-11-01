@@ -351,7 +351,7 @@ def detection():
     stamp = tl.show(at(3, 1.4), "opacity:0;transform:scale(1.6) rotate(-8deg)", "opacity:1;transform:scale(1) rotate(-8deg)", 0.25)
     b.append(f'<g class="{stamp}" style="transform-box:fill-box;transform-origin:center">'
              f'{rect(x + 170, y + 94, 84, 30, "alertbg", 5)}{t(x + 212, y + 114, "MATCH", "b", "middle", WHITE)}</g>')
-    b.append(t(x + 14, y + 190, "6 rules, 26 fixtures, all run in CI", "sub"))
+    b.append(t(x + 14, y + 190, "7 rules, 30 fixtures, all run in CI", "sub"))
     b.append(t(x + 14, y + 205, "and in the Docker build", "sub"))
     b.append("</g>")
 
