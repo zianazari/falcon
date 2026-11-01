@@ -1,4 +1,4 @@
-# Falcon
+# <img src="docs/assets/falcon-icon.svg" alt="" height="36" align="top"> Falcon
 
 Security observability and vulnerability automation for Google Cloud, engineered as code.
 
