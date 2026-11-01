@@ -1,0 +1,48 @@
+# Builds the pipeline image and rolls out a new Cloud Run revision. Keyless:
+# authenticates with Workload Identity Federation (infra/terraform/modules/ci-identity).
+# Set the repository variables printed by `terraform output github_actions_variables`.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+    paths: ["pipeline/**", "detections/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    # No `environment:` here: it would change the OIDC sub claim that the
+    # Workload Identity provider pins to refs/heads/main.
+    steps:
+      - uses: actions/checkout@v5
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Build and push (detection tests run inside the build)
+        env:
+          REGION: ${{ vars.GCP_REGION }}
+          REPOSITORY: ${{ vars.GCP_IMAGE_REPOSITORY }}
+        run: |
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          image="$REPOSITORY/pipeline:$GITHUB_SHA"
+          docker build -f pipeline/Dockerfile -t "$image" .
+          docker push "$image"
+          echo "IMAGE=$image" >> "$GITHUB_ENV"
+      - name: Roll out
+        env:
+          SERVICE: ${{ vars.GCP_PIPELINE_SERVICE }}
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          REGION: ${{ vars.GCP_REGION }}
+        run: gcloud run services update "$SERVICE" --project "$PROJECT" --region "$REGION" --image "$IMAGE"

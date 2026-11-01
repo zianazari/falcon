@@ -1,0 +1,22 @@
+[
+  {
+    "number": 3,
+    "state": "open",
+    "rule": {
+      "id": "js/sql-injection",
+      "description": "Database query built from user-controlled sources",
+      "severity": "error",
+      "security_severity_level": "high"
+    },
+    "tool": {
+      "name": "CodeQL"
+    },
+    "most_recent_instance": {
+      "location": {
+        "path": "services/checkout/src/db/orders.ts"
+      }
+    },
+    "html_url": "https://github.com/acme/payments-api/security/code-scanning/3",
+    "created_at": "2026-10-20T12:00:00Z"
+  }
+]

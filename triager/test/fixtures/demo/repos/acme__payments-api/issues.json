@@ -1,0 +1,36 @@
+[
+  {
+    "number": 101,
+    "state": "open",
+    "title": "[P3] express: Express.js Open Redirect (CVE-2024-29041)",
+    "body": "Falcon found a vulnerability.\n\n<!-- falcon:key=acme/payments-api:dependabot:9 -->",
+    "labels": [
+      {
+        "name": "falcon"
+      },
+      {
+        "name": "falcon:P3"
+      },
+      {
+        "name": "ecosystem:npm"
+      }
+    ]
+  },
+  {
+    "number": 102,
+    "state": "open",
+    "title": "[P2] lodash: Command Injection in lodash (CVE-2021-23337)",
+    "body": "Falcon found a vulnerability.\n\n<!-- falcon:key=acme/payments-api:dependabot:12 -->",
+    "labels": [
+      {
+        "name": "falcon"
+      },
+      {
+        "name": "falcon:P2"
+      },
+      {
+        "name": "ecosystem:npm"
+      }
+    ]
+  }
+]

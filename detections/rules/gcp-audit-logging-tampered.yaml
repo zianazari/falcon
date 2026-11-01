@@ -1,0 +1,21 @@
+id: gcp-audit-logging-tampered
+title: Audit logging tampered with
+description: >
+  A log sink, log bucket or exclusion was deleted or changed, or a log was
+  deleted. Attackers do this to blind detection; this pipeline itself depends
+  on the audit sink.
+severity: critical
+mitre: [T1562.008]
+runbook: docs/runbooks.md#gcp-audit-logging-tampered
+match:
+  all:
+    - field: outcome
+      equals: success
+    - field: action
+      in:
+        - google.logging.v2.ConfigServiceV2.DeleteSink
+        - google.logging.v2.ConfigServiceV2.UpdateSink
+        - google.logging.v2.ConfigServiceV2.DeleteBucket
+        - google.logging.v2.ConfigServiceV2.CreateExclusion
+        - google.logging.v2.ConfigServiceV2.UpdateExclusion
+        - google.logging.v2.LoggingServiceV2.DeleteLog

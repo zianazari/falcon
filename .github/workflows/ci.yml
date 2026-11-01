@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  pipeline:
+    name: Go pipeline + detections
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: pipeline/go.mod
+          cache-dependency-path: pipeline/go.sum
+      - name: gofmt
+        run: test -z "$(gofmt -l pipeline simulator)" || { gofmt -l pipeline simulator; exit 1; }
+      - run: make test-go
+      - name: Detection fixtures
+        run: make detect-test
+
+  triager:
+    name: TypeScript triager
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            triager/package-lock.json
+            console/package-lock.json
+      - run: make test-triager
+      - run: make triage-demo
+      - name: Console typecheck and build
+        run: cd console && npm ci && npm run build
+
+  terraform:
+    name: Terraform (validate, tflint, Checkov)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: hashicorp/setup-terraform@v3
+      - run: make tf-check
+
+  e2e:
+    name: End-to-end (emulator + pipeline + attack replay)
+    runs-on: ubuntu-latest
+    needs: [pipeline]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: pipeline/go.mod
+          cache-dependency-path: pipeline/go.sum
+      - run: make e2e
+      - name: Pipeline logs
+        if: failure()
+        run: docker compose logs pipeline

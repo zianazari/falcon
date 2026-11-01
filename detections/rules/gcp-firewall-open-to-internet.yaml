@@ -1,0 +1,22 @@
+id: gcp-firewall-open-to-internet
+title: Firewall rule opened to the internet
+description: >
+  A VPC ingress firewall rule was created or changed to allow traffic from
+  0.0.0.0/0. Public ingress should only go through the load balancer.
+severity: high
+mitre: [T1562.007]
+runbook: docs/runbooks.md#gcp-firewall-open-to-internet
+match:
+  all:
+    - field: action
+      in:
+        - v1.compute.firewalls.insert
+        - v1.compute.firewalls.patch
+        - v1.compute.firewalls.update
+    - field: outcome
+      equals: success
+    - field: raw.protoPayload.request.sourceRanges
+      equals: 0.0.0.0/0
+    - not:
+        field: raw.protoPayload.request.direction
+        equals: EGRESS

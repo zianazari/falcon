@@ -1,0 +1,53 @@
+# Daily vulnerability triage across the repos in vars.FALCON_REPOS.
+# Needs secrets.FALCON_GITHUB_TOKEN: a GitHub App or fine-grained token with
+# Dependabot alerts, code scanning alerts and contents (read), and issues (write).
+# The built-in GITHUB_TOKEN cannot read Dependabot alerts.
+name: triage
+
+on:
+  schedule:
+    - cron: "0 6 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Plan only, do not touch issues
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  triage:
+    if: vars.FALCON_REPOS != ''
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.FALCON_GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: triager/package-lock.json
+      - working-directory: triager
+        run: npm ci && npm run build
+      # Inputs reach the shell through env, never via ${{ }} inside run: (script injection).
+      - name: Triage and sync issues
+        working-directory: triager
+        env:
+          FALCON_REPOS: ${{ vars.FALCON_REPOS }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          args=()
+          for r in $FALCON_REPOS; do args+=(--repo "$r"); done
+          if [ "$DRY_RUN" = "true" ]; then args+=(--dry-run); fi
+          node dist/cli.js run "${args[@]}"
+      - name: SLA gate (red when P1/P2 findings are overdue)
+        working-directory: triager
+        env:
+          FALCON_REPOS: ${{ vars.FALCON_REPOS }}
+        run: |
+          args=()
+          for r in $FALCON_REPOS; do args+=(--repo "$r"); done
+          node dist/cli.js check "${args[@]}"

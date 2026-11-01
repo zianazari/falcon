@@ -1,0 +1,28 @@
+id: gcp-privileged-role-granted
+title: Privileged IAM role granted
+description: >
+  A highly privileged role (owner, editor, security admin, or a role that can
+  mint service-account credentials) was added to a principal on a project,
+  folder or organization IAM policy.
+severity: high
+mitre: [T1098.003]
+runbook: docs/runbooks.md#gcp-privileged-role-granted
+match:
+  all:
+    - field: action
+      ends_with: SetIamPolicy
+    - field: outcome
+      equals: success
+    - some: iam_deltas
+      where:
+        all:
+          - field: action
+            equals: ADD
+          - field: role
+            in:
+              - roles/owner
+              - roles/editor
+              - roles/iam.securityAdmin
+              - roles/iam.serviceAccountTokenCreator
+              - roles/iam.serviceAccountKeyAdmin
+              - roles/resourcemanager.organizationAdmin

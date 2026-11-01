@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="960" height="520" role="img" aria-labelledby="title desc" xml:space="preserve">
+<title id="title">How Falcon detects an attack</title>
+<desc id="desc">Six steps: an attacker creates a service account key; GCP writes an audit log; the pipeline normalizes and enriches it; the gcp-sa-key-created rule matches; a Slack alert is sent and a row is written to BigQuery. A denied attempt by another user does not alert.</desc>
+<style>
+svg{--bg:#ffffff;--card:#f6f8fa;--ink:#1f2328;--muted:#59636e;--line:#d1d9e0;--accent:#0969da;--alert:#cf222e;
+--ok:#1a7f37;--warn:#9a6700;--code:#eef1f4;--chip:#ddf4ff}
+@media (prefers-color-scheme: dark){svg{--bg:#0d1117;--card:#151b23;--ink:#e6edf3;--muted:#9198a1;--line:#3d444d;
+--accent:#4493f8;--alert:#f85149;--ok:#3fb950;--warn:#d29922;--code:#1f2630;--chip:#0c2d6b}}
+text{white-space:pre;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:var(--ink);font-size:12px}
+.bg{fill:var(--bg);stroke:var(--line)}
+.card{fill:var(--card);stroke:var(--line);stroke-width:1.2}
+.code{fill:var(--code)}
+.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:11px}
+.h1{font-size:15px;font-weight:600}
+.ct{font-size:13px;font-weight:600}
+.sub{fill:var(--muted);font-size:11px}
+.muted{fill:var(--muted)}
+.accent{fill:var(--accent)}
+.alert{fill:var(--alert)}
+.ok{fill:var(--ok)}
+.warn{fill:var(--warn)}
+.b{font-weight:600}
+.num{fill:var(--accent)}
+.numt{fill:#fff;font-size:11px;font-weight:700}
+.line{stroke:var(--line);stroke-width:1.5;fill:none}
+.flow{stroke:var(--muted);stroke-width:1.5;fill:none}
+.dash{stroke-dasharray:4 4}
+.chipbg{fill:var(--chip)}
+.alertbg{fill:var(--alert)}
+.okbg{fill:var(--ok)}
+.warnbg{fill:var(--warn)}
+.accentbg{fill:var(--accent)}
+.mutedbg{fill:var(--line)}
+.bar{transform-box:fill-box;transform-origin:left center}
+.ah{fill:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}.packet{display:none}}
+@keyframes k0{0%,15.62%{opacity:.25}17.81%,93.75%{opacity:1}96.25%,100%{opacity:.25}}.k0{animation:k0 16.0s linear infinite}@keyframes k1{0%,60.62%{opacity:.25}62.81%,93.75%{opacity:1}96.25%,100%{opacity:.25}}.k1{animation:k1 16.0s linear infinite}@keyframes k2{0%,30.63%{opacity:.25}32.81%,93.75%{opacity:1}96.25%,100%{opacity:.25}}.k2{animation:k2 16.0s linear infinite}@keyframes k3{0%,45.62%{opacity:.25}47.81%,93.75%{opacity:1}96.25%,100%{opacity:.25}}.k3{animation:k3 16.0s linear infinite}@keyframes k4{0%,2.50%{opacity:.22}4.69%,93.75%{opacity:1}96.25%,100%{opacity:.22}}.k4{animation:k4 16.0s linear infinite}@keyframes k5{0%,2.50%{stroke:var(--line);stroke-width:1.2}4.38%,17.50%{stroke:var(--accent);stroke-width:2.4}19.37%,100%{stroke:var(--line);stroke-width:1.2}}.k5{animation:k5 16.0s linear infinite}@keyframes k6{0%,4.38%{opacity:0}6.56%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k6{animation:k6 16.0s linear infinite}@keyframes k7{0%,7.19%{opacity:0}9.38%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k7{animation:k7 16.0s linear infinite}@keyframes k8{0%,10.00%{opacity:0}12.19%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k8{animation:k8 16.0s linear infinite}@keyframes k9{0%,12.50%{opacity:0}14.69%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k9{animation:k9 16.0s linear infinite}@keyframes k10{0%,17.50%{opacity:.22}19.69%,93.75%{opacity:1}96.25%,100%{opacity:.22}}.k10{animation:k10 16.0s linear infinite}@keyframes k11{0%,17.50%{stroke:var(--line);stroke-width:1.2}19.37%,32.50%{stroke:var(--accent);stroke-width:2.4}34.38%,100%{stroke:var(--line);stroke-width:1.2}}.k11{animation:k11 16.0s linear infinite}@keyframes k12{0%,18.75%{opacity:0}20.94%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k12{animation:k12 16.0s linear infinite}@keyframes k13{0%,20.12%{opacity:0}22.31%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k13{animation:k13 16.0s linear infinite}@keyframes k14{0%,21.50%{opacity:0}23.69%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k14{animation:k14 16.0s linear infinite}@keyframes k15{0%,22.88%{opacity:0}25.06%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k15{animation:k15 16.0s linear infinite}@keyframes k16{0%,24.25%{opacity:0}26.44%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k16{animation:k16 16.0s linear infinite}@keyframes k17{0%,25.62%{opacity:0}27.81%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k17{animation:k17 16.0s linear infinite}@keyframes k18{0%,27.00%{opacity:0}29.19%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k18{animation:k18 16.0s linear infinite}@keyframes k19{0%,27.50%{opacity:0}29.38%,31.87%{opacity:1}33.75%,100%{opacity:0}}.k19{animation:k19 16.0s linear infinite}@keyframes k20{0%,32.50%{opacity:.22}34.69%,93.75%{opacity:1}96.25%,100%{opacity:.22}}.k20{animation:k20 16.0s linear infinite}@keyframes k21{0%,32.50%{stroke:var(--line);stroke-width:1.2}34.38%,47.50%{stroke:var(--accent);stroke-width:2.4}49.38%,100%{stroke:var(--line);stroke-width:1.2}}.k21{animation:k21 16.0s linear infinite}@keyframes k22{0%,33.75%{opacity:0}35.94%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k22{animation:k22 16.0s linear infinite}@keyframes k23{0%,35.31%{opacity:0}37.50%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k23{animation:k23 16.0s linear infinite}@keyframes k24{0%,36.88%{opacity:0}39.06%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k24{animation:k24 16.0s linear infinite}@keyframes k25{0%,38.44%{opacity:0}40.62%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k25{animation:k25 16.0s linear infinite}@keyframes k26{0%,40.00%{opacity:0}42.19%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k26{animation:k26 16.0s linear infinite}@keyframes k27{0%,41.56%{opacity:0}43.75%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k27{animation:k27 16.0s linear infinite}@keyframes k28{0%,47.50%{opacity:.22}49.69%,93.75%{opacity:1}96.25%,100%{opacity:.22}}.k28{animation:k28 16.0s linear infinite}@keyframes k29{0%,47.50%{stroke:var(--line);stroke-width:1.2}49.38%,62.50%{stroke:var(--accent);stroke-width:2.4}64.38%,100%{stroke:var(--line);stroke-width:1.2}}.k29{animation:k29 16.0s linear infinite}@keyframes k30{0%,50.62%{opacity:0;transform:scale(.4)}52.19%,93.75%{opacity:1;transform:scale(1)}96.25%,100%{opacity:0;transform:scale(.4)}}.k30{animation:k30 16.0s linear infinite}@keyframes k31{0%,53.12%{opacity:0;transform:scale(.4)}54.69%,93.75%{opacity:1;transform:scale(1)}96.25%,100%{opacity:0;transform:scale(.4)}}.k31{animation:k31 16.0s linear infinite}@keyframes k32{0%,56.25%{opacity:0;transform:scale(1.6) rotate(-8deg)}57.81%,93.75%{opacity:1;transform:scale(1) rotate(-8deg)}96.25%,100%{opacity:0;transform:scale(1.6) rotate(-8deg)}}.k32{animation:k32 16.0s linear infinite}@keyframes k33{0%,62.50%{opacity:.22}64.69%,93.75%{opacity:1}96.25%,100%{opacity:.22}}.k33{animation:k33 16.0s linear infinite}@keyframes k34{0%,62.50%{stroke:var(--line);stroke-width:1.2}64.38%,76.25%{stroke:var(--accent);stroke-width:2.4}78.12%,100%{stroke:var(--line);stroke-width:1.2}}.k34{animation:k34 16.0s linear infinite}@keyframes k35{0%,64.38%{opacity:0;transform:translateY(10px)}66.88%,93.75%{opacity:1;transform:translateY(0)}96.25%,100%{opacity:0;transform:translateY(10px)}}.k35{animation:k35 16.0s linear infinite}@keyframes k36{0%,70.00%{opacity:0}72.19%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k36{animation:k36 16.0s linear infinite}@keyframes k37{0%,76.25%{opacity:.22}78.44%,93.75%{opacity:1}96.25%,100%{opacity:.22}}.k37{animation:k37 16.0s linear infinite}@keyframes k38{0%,76.25%{stroke:var(--line);stroke-width:1.2}78.12%,93.75%{stroke:var(--accent);stroke-width:2.4}95.62%,100%{stroke:var(--line);stroke-width:1.2}}.k38{animation:k38 16.0s linear infinite}@keyframes k39{0%,80.00%{opacity:0;transform:scale(.4)}81.56%,93.75%{opacity:1;transform:scale(1)}96.25%,100%{opacity:0;transform:scale(.4)}}.k39{animation:k39 16.0s linear infinite}@keyframes k40{0%,83.12%{opacity:0}85.31%,93.75%{opacity:1}96.25%,100%{opacity:0}}.k40{animation:k40 16.0s linear infinite}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+<rect x="0.5" y="0.5" width="959" height="519" rx="12" class="bg"/>
+<text x="24" y="34" class="h1">How Falcon catches one attack step</text>
+<text x="936" y="34" class="sub mono" text-anchor="end">replay locally: make up &amp;&amp; make attack</text>
+<path d="M317,163.0 H328" class="flow k0" marker-end="url(#arrow)"/>
+<path d="M317,395.0 H328" class="flow k1" marker-end="url(#arrow)"/>
+<path d="M632,163.0 H643" class="flow k2" marker-end="url(#arrow)"/>
+<path d="M795.0,270 C795.0,284 165.0,274 165.0,287" class="flow dash k3" marker-end="url(#arrow)"/>
+<g class="k4"><rect x="16" y="58" width="298" height="210" rx="10" class="card k5"/><circle cx="38" cy="80" r="11" class="num"/><text x="38" y="84" class="numt" text-anchor="middle">1</text><text x="56" y="85" class="ct">An attacker acts</text>
+<rect x="30" y="102" width="270" height="92" rx="6" class="code"/>
+<g class="k6"><text x="40" y="128" class="mono">$ gcloud iam service-accounts keys \</text></g>
+<g class="k7"><text x="40" y="148" class="mono">    create key.json \</text></g>
+<g class="k8"><text x="40" y="168" class="mono">    --iam-account ci-deployer@prod...</text></g>
+<g class="k9"><text x="40" y="183" class="mono ok">Created key [3f9a...] ✓</text></g>
+<text x="30" y="220" class="b">mallory@corp.example</text>
+<text x="30" y="238" class="sub">phished session · from 203.0.113.66</text>
+<text x="30" y="254" class="sub">goal: a key that survives a password reset</text>
+</g>
+<g class="k10"><rect x="331" y="58" width="298" height="210" rx="10" class="card k11"/><circle cx="353" cy="80" r="11" class="num"/><text x="353" y="84" class="numt" text-anchor="middle">2</text><text x="371" y="85" class="ct">GCP writes an audit log</text>
+<rect x="345" y="102" width="270" height="124" rx="6" class="code"/>
+<g class="k12"><text x="353" y="120" class="mono muted">"methodName":</text></g>
+<g class="k13"><text x="353" y="136" class="mono">  "...CreateServiceAccountKey",</text></g>
+<g class="k14"><text x="353" y="152" class="mono muted">"authenticationInfo": {</text></g>
+<g class="k15"><text x="353" y="168" class="mono">  "principalEmail":</text></g>
+<g class="k16"><text x="353" y="184" class="mono">    "mallory@corp.example" },</text></g>
+<g class="k17"><text x="353" y="200" class="mono muted">"requestMetadata": {</text></g>
+<g class="k18"><text x="353" y="216" class="mono">  "callerIp": "203.0.113.66" }</text></g>
+<text x="345" y="246" class="sub">Log sink → Pub/Sub → push to pipeline</text>
+<text x="345" y="261" class="sub">a dead-letter topic catches anything that fails</text>
+<circle cx="607" cy="80" r="5" class="accentbg k19"/>
+</g>
+<g class="k20"><rect x="646" y="58" width="298" height="210" rx="10" class="card k21"/><circle cx="668" cy="80" r="11" class="num"/><text x="668" y="84" class="numt" text-anchor="middle">3</text><text x="686" y="85" class="ct">Normalize + enrich</text>
+<g class="k22"><text x="662" y="122" class="mono muted">action</text><text x="750" y="122" class="mono">...CreateServiceAccountKey</text></g>
+<g class="k23"><text x="662" y="144" class="mono muted">actor</text><text x="750" y="144" class="mono">mallory@corp.example</text></g>
+<g class="k24"><text x="662" y="166" class="mono muted">actor_type</text><text x="750" y="166" class="mono">user</text><rect x="862" y="153" width="66" height="18" rx="9" class="chipbg"/><text x="895" y="166" class="sub" text-anchor="middle">enriched</text></g>
+<g class="k25"><text x="662" y="188" class="mono muted">ip_class</text><text x="750" y="188" class="mono">public</text><rect x="862" y="175" width="66" height="18" rx="9" class="chipbg"/><text x="895" y="188" class="sub" text-anchor="middle">enriched</text></g>
+<g class="k26"><text x="662" y="210" class="mono muted">outcome</text><text x="750" y="210" class="mono">success</text></g>
+<g class="k27"><text x="662" y="232" class="mono muted">project</text><text x="750" y="232" class="mono">falcon-demo-prod</text></g>
+<text x="662" y="258" class="sub">one flat schema for every source</text>
+</g>
+<g class="k28"><rect x="16" y="290" width="298" height="210" rx="10" class="card k29"/><circle cx="38" cy="312" r="11" class="num"/><text x="38" y="316" class="numt" text-anchor="middle">4</text><text x="56" y="317" class="ct">A detection rule matches</text>
+<rect x="30" y="334" width="270" height="124" rx="6" class="code"/>
+<text x="38" y="354" class="mono accent">id: gcp-sa-key-created</text>
+<text x="38" y="373" class="mono">severity: high   mitre: T1098.001</text>
+<text x="38" y="392" class="mono">match:</text>
+<text x="38" y="411" class="mono">  all:</text>
+<text x="38" y="430" class="mono">  - action = CreateServiceAccountKey</text>
+<text x="38" y="449" class="mono">  - outcome = success</text>
+<g class="k30" style="transform-box:fill-box;transform-origin:center"><text x="284" y="430" class="ok b" font-size="14">✓</text></g>
+<g class="k31" style="transform-box:fill-box;transform-origin:center"><text x="284" y="449" class="ok b" font-size="14">✓</text></g>
+<g class="k32" style="transform-box:fill-box;transform-origin:center"><rect x="186" y="384" width="84" height="30" rx="5" class="alertbg"/><text x="228" y="404" class="b" text-anchor="middle" style="fill:#fff">MATCH</text></g>
+<text x="30" y="480" class="sub">6 rules, 26 fixtures, all run in CI</text>
+<text x="30" y="495" class="sub">and in the Docker build</text>
+</g>
+<g class="k33"><rect x="331" y="290" width="298" height="210" rx="10" class="card k34"/><circle cx="353" cy="312" r="11" class="num"/><text x="353" y="316" class="numt" text-anchor="middle">5</text><text x="371" y="317" class="ct">A human is alerted</text>
+<g class="k35">
+<rect x="345" y="334" width="270" height="116" rx="6" class="code"/>
+<rect x="345" y="334" width="4" height="116" rx="2" class="alertbg"/>
+<circle cx="363" cy="354" r="6" class="alertbg"/>
+<text x="375" y="358" class="b">Service account key created</text>
+<text x="359" y="380" class="mono">gcp-sa-key-created · HIGH · T1098.001</text>
+<text x="359" y="400" class="mono">Actor:   mallory@corp.example</text>
+<text x="359" y="418" class="mono">Project: falcon-demo-prod</text>
+<text x="359" y="436" class="mono accent">Runbook: docs/runbooks.md</text>
+</g>
+<g class="k36"><text x="345" y="474" class="sub">+1 row in falcon_security.alerts</text><text x="345" y="490" class="sub">to query and graph in BigQuery</text></g>
+</g>
+<g class="k37"><rect x="646" y="290" width="298" height="210" rx="10" class="card k38" stroke-dasharray="5 4"/><circle cx="668" cy="312" r="11" class="num"/><text x="668" y="316" class="numt" text-anchor="middle">6</text><text x="686" y="317" class="ct">Meanwhile, a near miss</text>
+<text x="662" y="346">bob@corp.example tries the same call</text>
+<rect x="660" y="356" width="270" height="62" rx="6" class="code"/>
+<text x="668" y="376" class="mono">status: 7 PERMISSION_DENIED</text>
+<text x="668" y="394" class="mono">outcome = failure</text>
+<text x="668" y="412" class="mono">- outcome = success</text>
+<g class="k39" style="transform-box:fill-box;transform-origin:center"><text x="912" y="412" class="alert b" font-size="14">✗</text></g>
+<g class="k40"><text x="662" y="444" class="b ok">No alert: denied calls are not compromises.</text><text x="662" y="462" class="sub">The event is still stored for hunting.</text><text x="662" y="480" class="sub">The demo checks 40 of these: 0 false alarms.</text></g>
+</g>
+</svg>

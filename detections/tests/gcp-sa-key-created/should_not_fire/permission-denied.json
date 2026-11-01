@@ -1,0 +1,30 @@
+{
+  "insertId": "fx-sakey-3",
+  "logName": "projects/falcon-demo-prod/logs/cloudaudit.googleapis.com%2Factivity",
+  "timestamp": "2026-10-01T12:00:00.000Z",
+  "receiveTimestamp": "2026-10-01T12:00:00.000Z",
+  "severity": "NOTICE",
+  "resource": {
+    "type": "service_account",
+    "labels": {
+      "project_id": "falcon-demo-prod"
+    }
+  },
+  "protoPayload": {
+    "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+    "serviceName": "iam.googleapis.com",
+    "methodName": "google.iam.admin.v1.CreateServiceAccountKey",
+    "resourceName": "projects/-/serviceAccounts/ci-deployer@falcon-demo-prod.iam.gserviceaccount.com",
+    "authenticationInfo": {
+      "principalEmail": "bob@corp.example"
+    },
+    "requestMetadata": {
+      "callerIp": "203.0.113.66",
+      "callerSuppliedUserAgent": "google-cloud-sdk gcloud/495.0.0"
+    },
+    "status": {
+      "code": 7,
+      "message": "PERMISSION_DENIED"
+    }
+  }
+}

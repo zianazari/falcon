@@ -1,0 +1,4 @@
+project_id        = "my-falcon-dev"
+github_repository = "your-github-user/falcon"
+# enable_slack     = true
+# bigquery_readers = ["group:security@example.com"]

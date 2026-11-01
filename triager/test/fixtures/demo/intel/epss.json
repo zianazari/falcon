@@ -1,0 +1,30 @@
+{
+  "CVE-2021-44228": {
+    "score": 0.944,
+    "percentile": 0.9999
+  },
+  "CVE-2023-44487": {
+    "score": 0.81,
+    "percentile": 0.991
+  },
+  "CVE-2021-23337": {
+    "score": 0.012,
+    "percentile": 0.78
+  },
+  "CVE-2024-4068": {
+    "score": 0.0009,
+    "percentile": 0.38
+  },
+  "CVE-2024-22195": {
+    "score": 0.0007,
+    "percentile": 0.29
+  },
+  "CVE-2024-29041": {
+    "score": 0.002,
+    "percentile": 0.55
+  },
+  "CVE-2024-35195": {
+    "score": 0.0005,
+    "percentile": 0.2
+  }
+}

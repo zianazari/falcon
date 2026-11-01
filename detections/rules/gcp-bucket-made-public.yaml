@@ -1,0 +1,22 @@
+id: gcp-bucket-made-public
+title: Cloud Storage bucket made public
+description: >
+  allUsers or allAuthenticatedUsers was granted access to a bucket, which
+  exposes its objects to the internet. A classic data-exfiltration and
+  misconfiguration path.
+severity: critical
+mitre: [T1530]
+runbook: docs/runbooks.md#gcp-bucket-made-public
+match:
+  all:
+    - field: action
+      equals: storage.setIamPermissions
+    - field: outcome
+      equals: success
+    - some: iam_deltas
+      where:
+        all:
+          - field: action
+            equals: ADD
+          - field: member
+            in: [allUsers, allAuthenticatedUsers]

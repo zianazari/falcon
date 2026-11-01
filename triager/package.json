@@ -1,0 +1,28 @@
+{
+  "name": "falcon-triager",
+  "version": "0.1.0",
+  "description": "Prioritizes Dependabot and code-scanning alerts, routes them to owners, and nudges until fixed.",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "demo": "npm run build && node dist/cli.js run --fixtures test/fixtures/demo --repo acme/payments-api --repo acme/data-platform",
+    "demo:check": "npm run build && node dist/cli.js check --fixtures test/fixtures/demo --repo acme/payments-api --repo acme/data-platform"
+  },
+  "type": "module",
+  "dependencies": {
+    "@octokit/rest": "^22.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.12"
+  },
+  "private": true,
+  "bin": {
+    "falcon-triage": "dist/cli.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

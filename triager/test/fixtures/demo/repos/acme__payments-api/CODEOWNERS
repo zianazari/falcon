@@ -1,0 +1,8 @@
+# Default owner for everything
+*                     @acme/platform
+
+/services/checkout/   @acme/checkout-team
+/services/ledger/     @acme/ledger-team @alice
+
+# Root lockfile only (anchored), not every package-lock.json
+/package-lock.json    @acme/platform

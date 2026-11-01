@@ -1,0 +1,38 @@
+{
+  "insertId": "fx-pub-3",
+  "logName": "projects/falcon-demo-prod/logs/cloudaudit.googleapis.com%2Factivity",
+  "timestamp": "2026-10-01T12:00:00.000Z",
+  "receiveTimestamp": "2026-10-01T12:00:00.000Z",
+  "severity": "NOTICE",
+  "resource": {
+    "type": "gcs_bucket",
+    "labels": {
+      "project_id": "falcon-demo-prod"
+    }
+  },
+  "protoPayload": {
+    "@type": "type.googleapis.com/google.cloud.audit.AuditLog",
+    "serviceName": "storage.googleapis.com",
+    "methodName": "storage.setIamPermissions",
+    "resourceName": "projects/_/buckets/customer-exports",
+    "authenticationInfo": {
+      "principalEmail": "alice@corp.example"
+    },
+    "requestMetadata": {
+      "callerIp": "203.0.113.66",
+      "callerSuppliedUserAgent": "google-cloud-sdk gcloud/495.0.0"
+    },
+    "serviceData": {
+      "@type": "type.googleapis.com/google.iam.v1.logging.AuditData",
+      "policyDelta": {
+        "bindingDeltas": [
+          {
+            "action": "ADD",
+            "role": "roles/storage.objectViewer",
+            "member": "user:carol@corp.example"
+          }
+        ]
+      }
+    }
+  }
+}

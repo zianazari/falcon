@@ -1,0 +1,35 @@
+# Local stack: Pub/Sub emulator -> (push) -> pipeline -> ./.data/*.jsonl
+# Run `make up`, then `make attack`.
+services:
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command: gcloud beta emulators pubsub start --project=falcon-local --host-port=0.0.0.0:8085
+    ports: ["8085:8085"]
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8085"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  pipeline:
+    build:
+      context: .
+      dockerfile: pipeline/Dockerfile
+    environment:
+      SINK: file
+      SINK_DIR: /data
+      RULES_DIR: /rules
+      SLACK_WEBHOOK_URL: ${SLACK_WEBHOOK_URL:-}
+    volumes:
+      - ./.data:/data
+      # Mounted so rule edits only need `docker compose restart pipeline`.
+      - ./detections/rules:/rules:ro
+    ports: ["8080:8080"]
+    depends_on:
+      pubsub:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/pipeline", "-healthcheck"]
+      interval: 2s
+      timeout: 2s
+      retries: 15

@@ -1,0 +1,123 @@
+[
+  {
+    "name": "id",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "description": "LogEntry insertId"
+  },
+  {
+    "name": "ts",
+    "type": "TIMESTAMP",
+    "mode": "REQUIRED",
+    "description": "Event time"
+  },
+  {
+    "name": "received_at",
+    "type": "TIMESTAMP",
+    "mode": "REQUIRED"
+  },
+  {
+    "name": "source",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "log_type",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "service",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "action",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Audit methodName"
+  },
+  {
+    "name": "resource",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "project",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "actor",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "actor_type",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "src_ip",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "ip_class",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "user_agent",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "outcome",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "status_code",
+    "type": "INTEGER",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "status_message",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "severity",
+    "type": "STRING",
+    "mode": "NULLABLE"
+  },
+  {
+    "name": "iam_deltas",
+    "type": "RECORD",
+    "mode": "REPEATED",
+    "fields": [
+      {
+        "name": "action",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "role",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      },
+      {
+        "name": "member",
+        "type": "STRING",
+        "mode": "NULLABLE"
+      }
+    ]
+  },
+  {
+    "name": "raw",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Original LogEntry JSON; query with JSON_VALUE(raw, '$.protoPayload...')"
+  }
+]

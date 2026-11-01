@@ -1,0 +1,15 @@
+id: gcp-sa-key-created
+title: Service account key created
+description: >
+  A user-managed key was created for a service account. Long-lived SA keys
+  are a top credential-theft and persistence vector; we use Workload Identity
+  instead, so any new key needs justification.
+severity: high
+mitre: [T1098.001]
+runbook: docs/runbooks.md#gcp-sa-key-created
+match:
+  all:
+    - field: action
+      equals: google.iam.admin.v1.CreateServiceAccountKey
+    - field: outcome
+      equals: success
