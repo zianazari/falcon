@@ -136,6 +136,7 @@ The console is a React + shadcn/ui app with a small Node API (`console/server`).
 | Page | Shows |
 |---|---|
 | **Overview** | Counters, pipeline health, activity over time, latest alerts, the vulnerability backlog |
+| **Resources** | Cloud Run CPU, memory, instances and requests; Pub/Sub backlog and dead letters; log export counts; BigQuery table sizes; Scheduler jobs. Locally: Docker container usage |
 | **Alerts** | Every rule match. Opening one shows the actor, resource, detection latency, the runbook, and the triggering event both normalized and as the original audit log |
 | **Events** | All normalized events, searchable and filterable, plus the dead-letter queue |
 | **Detections** | The rules with their YAML, fixtures and how often each fired. **Run fixture tests** runs `detect test` from the browser |

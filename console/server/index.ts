@@ -268,6 +268,153 @@ async function pipelineStatus(): Promise<Json> {
   };
 }
 
+// ---------------------------------------------------------------- resource monitoring
+
+interface Metric {
+  key: string;
+  type: string;
+  resource: string;
+  aligner: string;
+  reducer?: string;
+  groupBy?: string;
+}
+
+const PUSH_SUB = "falcon-audit-logs-pipeline-push";
+const DLQ_SUB = "falcon-audit-logs-dead-letter-pull";
+const SCHEDULER_REGION = "europe-west1";
+
+function metrics(service: string): Metric[] {
+  const run = `resource.type="cloud_run_revision" AND resource.labels.service_name="${service}"`;
+  const sub = (id: string) => `resource.type="pubsub_subscription" AND resource.labels.subscription_id="${id}"`;
+  const sink = `resource.type="logging_sink" AND resource.labels.name="falcon-audit-sink"`;
+  const m = "run.googleapis.com";
+  const ps = "pubsub.googleapis.com/subscription";
+  return [
+    { key: "cpu", type: `${m}/container/cpu/utilizations`, resource: run, aligner: "ALIGN_PERCENTILE_95", reducer: "REDUCE_MAX" },
+    { key: "memory", type: `${m}/container/memory/utilizations`, resource: run, aligner: "ALIGN_PERCENTILE_95", reducer: "REDUCE_MAX" },
+    { key: "instances", type: `${m}/container/instance_count`, resource: run, aligner: "ALIGN_MAX", reducer: "REDUCE_SUM", groupBy: "state" },
+    { key: "requests", type: `${m}/request_count`, resource: run, aligner: "ALIGN_SUM", reducer: "REDUCE_SUM", groupBy: "response_code_class" },
+    { key: "latency", type: `${m}/request_latencies`, resource: run, aligner: "ALIGN_PERCENTILE_95", reducer: "REDUCE_MAX" },
+    { key: "backlog", type: `${ps}/num_undelivered_messages`, resource: sub(PUSH_SUB), aligner: "ALIGN_MAX", reducer: "REDUCE_SUM" },
+    { key: "oldest", type: `${ps}/oldest_unacked_message_age`, resource: sub(PUSH_SUB), aligner: "ALIGN_MAX", reducer: "REDUCE_MAX" },
+    { key: "pushes", type: `${ps}/push_request_count`, resource: sub(PUSH_SUB), aligner: "ALIGN_SUM", reducer: "REDUCE_SUM", groupBy: "response_class" },
+    { key: "dlq", type: `${ps}/num_undelivered_messages`, resource: sub(DLQ_SUB), aligner: "ALIGN_MAX", reducer: "REDUCE_SUM" },
+    { key: "exported", type: "logging.googleapis.com/exports/log_entry_count", resource: sink, aligner: "ALIGN_SUM", reducer: "REDUCE_SUM" },
+    { key: "exportErrors", type: "logging.googleapis.com/exports/error_count", resource: sink, aligner: "ALIGN_SUM", reducer: "REDUCE_SUM" },
+  ];
+}
+
+interface Series {
+  label: string;
+  points: { t: string; v: number }[];
+}
+
+async function timeSeries(project: string, m: Metric, hours: number): Promise<Series[]> {
+  const end = new Date();
+  const q = new URLSearchParams({
+    filter: `metric.type="${m.type}" AND ${m.resource}`,
+    "interval.startTime": new Date(end.getTime() - hours * 3600_000).toISOString(),
+    "interval.endTime": end.toISOString(),
+    "aggregation.alignmentPeriod": `${hours === 1 ? 60 : hours === 6 ? 300 : 900}s`,
+    "aggregation.perSeriesAligner": m.aligner,
+  });
+  if (m.reducer) q.set("aggregation.crossSeriesReducer", m.reducer);
+  if (m.groupBy) q.set("aggregation.groupByFields", `metric.labels.${m.groupBy}`);
+  const res = await gcp(`https://monitoring.googleapis.com/v3/projects/${project}/timeSeries?${q}`);
+  const list = (res.timeSeries ?? []) as { metric?: { labels?: Record<string, string> }; points?: { interval: { endTime: string }; value: { doubleValue?: number; int64Value?: string } }[] }[];
+  return list.map((ts) => ({
+    label: (m.groupBy && ts.metric?.labels?.[m.groupBy]) || "value",
+    points: (ts.points ?? []).map((p) => ({ t: p.interval.endTime, v: Number(p.value.doubleValue ?? p.value.int64Value ?? 0) })).reverse(),
+  }));
+}
+
+// A resource that does not exist is an ordinary state here (nothing is deployed), not an error.
+async function optional(url: string): Promise<Json | null> {
+  try {
+    return await gcp(url);
+  } catch (e) {
+    if (/^404 /.test((e as Error).message)) return null;
+    throw e;
+  }
+}
+
+async function resources(url: URL): Promise<Json> {
+  const requested = Number(url.searchParams.get("hours"));
+  const hours = [1, 6, 24].includes(requested) ? requested : 1;
+
+  if (SOURCE === "local") {
+    const [stats, ps, info, messages] = await Promise.all([
+      run("docker", ["stats", "--no-stream", "--format", "json"], ROOT, 20_000),
+      run("docker", ["ps", "--format", "json"], ROOT),
+      run("docker", ["info", "--format", "{{.NCPU}}"], ROOT),
+      fetch("http://localhost:8080/stats", { signal: AbortSignal.timeout(1500) }).then((r) => (r.ok ? (r.json() as Promise<Json>) : undefined), () => undefined),
+    ]);
+    const lines = (out: string) => out.split("\n").filter((l) => l.trim().startsWith("{")).map((l) => JSON.parse(l) as Json);
+    const statusOf = new Map(lines(ps.stdout).map((c) => [String(c.Names), String(c.Status)]));
+    const containers = lines(stats.stdout)
+      .filter((c) => String(c.Name).startsWith("falcon-"))
+      .map((c) => {
+        const status = statusOf.get(String(c.Name)) ?? "";
+        const [memoryUsed, memoryLimit] = String(c.MemUsage).split(" / ");
+        return {
+          name: c.Name,
+          uptime: status.replace(/^Up\s+/, "").replace(/\s*\(.*\)$/, ""),
+          health: /\((.+)\)$/.exec(status)?.[1],
+          cpuPercent: parseFloat(String(c.CPUPerc)),
+          memoryPercent: parseFloat(String(c.MemPerc)),
+          memoryUsed,
+          memoryLimit,
+          network: c.NetIO,
+        };
+      });
+    return { source: "local", hours, cpus: Number(info.stdout.trim()) || undefined, containers, messages };
+  }
+
+  const cfg = await gcpConfig();
+  const settle = <T,>(p: Promise<T>) => p.then((v) => v, (e: Error) => ({ error: e.message }));
+  const specs = metrics(cfg.service);
+  const results = await Promise.all(specs.map((m) => settle(timeSeries(cfg.project, m, hours))));
+  const bq = `https://bigquery.googleapis.com/bigquery/v2/projects/${cfg.project}/datasets/${cfg.dataset}/tables`;
+  const [tables, scheduler, registry] = await Promise.all([
+    settle(Promise.all(["events", "alerts", "deadletter"].map(async (name) => {
+      const t = await optional(`${bq}/${name}`);
+      if (!t) return { name, exists: false };
+      const buffer = t.streamingBuffer as Json | undefined;
+      return {
+        name,
+        exists: true,
+        rows: Number(t.numRows ?? 0),
+        bytes: Number(t.numBytes ?? 0),
+        buffered: Number(buffer?.estimatedRows ?? 0),
+        modified: Number(t.lastModifiedTime ?? 0),
+      };
+    }))),
+    settle(optional(`https://cloudscheduler.googleapis.com/v1/projects/${cfg.project}/locations/${SCHEDULER_REGION}/jobs`)),
+    settle(optional(`https://artifactregistry.googleapis.com/v1/projects/${cfg.project}/locations/${cfg.region}/repositories/falcon`)),
+  ]);
+  const jobs = (scheduler as Json | null)?.jobs as Json[] | undefined;
+  return {
+    source: "gcp",
+    project: cfg.project,
+    region: cfg.region,
+    hours,
+    metrics: Object.fromEntries(specs.map((m, i) => [m.key, results[i]])),
+    tables,
+    scheduler: scheduler && "error" in scheduler
+      ? scheduler
+      : (jobs ?? []).map((j) => ({
+          name: String(j.name).split("/").pop(),
+          state: j.state,
+          schedule: j.schedule,
+          lastAttempt: j.lastAttemptTime,
+          status: (j.status as Json | undefined)?.code ?? 0,
+        })),
+    registry: registry && "error" in registry
+      ? registry
+      : registry && { name: "falcon", sizeBytes: Number(registry.sizeBytes ?? 0) },
+  };
+}
+
 async function meta(): Promise<Json> {
   const base = { source: SOURCE, generatedAt: new Date().toISOString() };
   if (SOURCE === "local") return { ...base, label: "Local stack (.data/*.jsonl)" };
@@ -277,7 +424,7 @@ async function meta(): Promise<Json> {
 
 // ---------------------------------------------------------------- http
 
-const routes: Record<string, () => Promise<unknown>> = {
+const routes: Record<string, (url: URL) => Promise<unknown>> = {
   "GET /api/meta": meta,
   "GET /api/events": events,
   "GET /api/alerts": alerts,
@@ -286,6 +433,7 @@ const routes: Record<string, () => Promise<unknown>> = {
   "GET /api/runbooks": runbooks,
   "GET /api/triage": triage,
   "GET /api/pipeline": pipelineStatus,
+  "GET /api/resources": resources,
   "POST /api/detections/test": detectionTests,
 };
 
@@ -312,13 +460,14 @@ const TTL_MS: Record<string, number> = { "GET /api/triage": 60_000 };
 const DEFAULT_TTL_MS = SOURCE === "gcp" ? 30_000 : 0;
 const cache = new Map<string, { at: number; body: Promise<string> }>();
 
-function cached(key: string, route: () => Promise<unknown>): Promise<string> {
+function cached(key: string, url: URL, route: (url: URL) => Promise<unknown>): Promise<string> {
   const ttl = TTL_MS[key] ?? (key.startsWith("GET ") ? DEFAULT_TTL_MS : 0);
-  const hit = cache.get(key);
+  const entry = key + url.search;
+  const hit = cache.get(entry);
   if (hit && Date.now() - hit.at < ttl) return hit.body;
-  const body = route().then((v) => JSON.stringify(v));
-  cache.set(key, { at: Date.now(), body });
-  body.catch(() => cache.delete(key));
+  const body = route(url).then((v) => JSON.stringify(v));
+  cache.set(entry, { at: Date.now(), body });
+  body.catch(() => cache.delete(entry));
   return body;
 }
 
@@ -332,7 +481,7 @@ async function handle(req: IncomingMessage, res: ServerResponse) {
     return;
   }
   try {
-    const body = await cached(key, route);
+    const body = await cached(key, new URL(url, "http://localhost"), route);
     res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "no-store" }).end(body);
   } catch (err) {
     res.writeHead(500, { "Content-Type": "application/json" }).end(JSON.stringify({ error: (err as Error).message }));

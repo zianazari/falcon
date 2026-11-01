@@ -1,4 +1,4 @@
-import { Activity, AlertTriangle, Bird, Bug, FileCode2, LayoutDashboard, Moon, RefreshCw, Sun, Workflow } from "lucide-react"
+import { Activity, AlertTriangle, Bird, Bug, FileCode2, Gauge, LayoutDashboard, Moon, RefreshCw, Sun, Workflow } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -27,10 +27,17 @@ import { Detections } from "@/pages/detections"
 import { Events } from "@/pages/events"
 import { Overview } from "@/pages/overview"
 import { Pipeline } from "@/pages/pipeline"
+import { ResourcesPage } from "@/pages/resources"
 import { Vulnerabilities } from "@/pages/vulnerabilities"
 
 const NAV: { group: string; items: { page: Page; label: string; icon: typeof Activity }[] }[] = [
-  { group: "Monitor", items: [{ page: "overview", label: "Overview", icon: LayoutDashboard }] },
+  {
+    group: "Monitor",
+    items: [
+      { page: "overview", label: "Overview", icon: LayoutDashboard },
+      { page: "resources", label: "Resources", icon: Gauge },
+    ],
+  },
   {
     group: "Detect",
     items: [
@@ -172,6 +179,7 @@ function Shell({ auto, setAuto, dark, setDark, refreshMs }: { auto: boolean; set
         </header>
         <div data-section={page} className="mx-auto w-full min-w-0 max-w-[1600px] p-4 md:p-6">
           {page === "overview" && <Overview />}
+          {page === "resources" && <ResourcesPage />}
           {page === "alerts" && <Alerts openId={id} />}
           {page === "events" && <Events openId={id} />}
           {page === "detections" && <Detections openId={id} />}

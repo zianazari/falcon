@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 
-export type Page = "overview" | "alerts" | "events" | "detections" | "vulnerabilities" | "pipeline"
-export const PAGES: Page[] = ["overview", "alerts", "events", "detections", "vulnerabilities", "pipeline"]
+export type Page = "overview" | "resources" | "alerts" | "events" | "detections" | "vulnerabilities" | "pipeline"
+export const PAGES: Page[] = ["overview", "resources", "alerts", "events", "detections", "vulnerabilities", "pipeline"]
 
 /** Hash routes: #/alerts or #/alerts/<id> to open one item. */
 export function parseHash(hash: string): { page: Page; id?: string } {

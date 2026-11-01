@@ -104,6 +104,46 @@ export function Stat({ label, value, hint, tone, icon, section }: { label: strin
   )
 }
 
+// Literal class names so Tailwind generates them.
+const GAUGE_LEVELS = [
+  { from: 0, to: 70, name: "Normal", color: "var(--ok)", text: "text-ok" },
+  { from: 70, to: 90, name: "High", color: "var(--sev-medium)", text: "text-sev-medium" },
+  { from: 90, to: 100, name: "Critical", color: "var(--sev-critical)", text: "text-sev-critical" },
+]
+
+/** A Stat for a percentage: a half-circle gauge, with the thresholds marked on its outer rim. */
+export function GaugeStat({ label, percent, hint, section }: { label: string; percent: number | undefined; hint?: ReactNode; section?: string }) {
+  const known = percent !== undefined && Number.isFinite(percent)
+  const level = known ? (GAUGE_LEVELS.find((l) => percent < l.to) ?? GAUGE_LEVELS[2]) : undefined
+  const shown = known ? `${percent.toFixed(1)}%` : "N/A"
+  return (
+    <Card data-section={section} className="relative gap-2 overflow-hidden">
+      <span className="absolute inset-x-0 top-0 h-1 bg-section" />
+      <CardHeader>
+        <CardDescription>{label}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="relative mx-auto max-w-44">
+          <svg viewBox="0 0 120 66" fill="none" role="img" aria-label={`${label}: ${shown}${level ? `, ${level.name}` : ""}`} className="block w-full">
+            {GAUGE_LEVELS.map((l) => (
+              <path key={l.name} d="M 4 62 A 56 56 0 0 1 116 62" pathLength={100} stroke={l.color} strokeWidth={2} strokeDasharray={`${l.to - l.from} 100`} strokeDashoffset={-l.from} />
+            ))}
+            <path d="M 14 62 A 46 46 0 0 1 106 62" stroke="var(--muted)" strokeWidth={10} />
+            {level && (
+              <path d="M 14 62 A 46 46 0 0 1 106 62" pathLength={100} stroke={level.color} strokeWidth={10} strokeDasharray={`${Math.min(percent!, 100)} 100`} />
+            )}
+          </svg>
+          <span className={cn("absolute inset-x-0 bottom-0 text-center text-xl font-semibold tabular-nums", level?.text ?? "text-muted-foreground")}>{shown}</span>
+        </div>
+        <p className="text-center text-xs text-muted-foreground">
+          {level && <span className={cn("font-medium", level.text)}>{level.name} · </span>}
+          {hint}
+        </p>
+      </CardContent>
+    </Card>
+  )
+}
+
 /** A card that belongs to one section: a coloured top edge and a coloured title icon. */
 export function SectionCard({ section, className, children }: { section: string; className?: string; children: ReactNode }) {
   return (

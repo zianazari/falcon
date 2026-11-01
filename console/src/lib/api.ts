@@ -149,6 +149,44 @@ export interface PipelineStatus {
   terraform?: Record<string, unknown>
 }
 
+export interface MetricSeries {
+  label: string
+  points: { t: string; v: number }[]
+}
+
+export type MetricResult = MetricSeries[] | { error: string }
+
+export interface ResourceTable {
+  name: string
+  exists: boolean
+  rows?: number
+  bytes?: number
+  buffered?: number
+  modified?: number
+}
+
+export interface SchedulerJob {
+  name: string
+  state: string
+  schedule: string
+  lastAttempt?: string
+  status: number
+}
+
+export interface Resources {
+  source: "local" | "gcp"
+  hours: number
+  project?: string
+  region?: string
+  cpus?: number
+  messages?: { processed: number; duplicates: number; dead_lettered: number; errors: number }
+  containers?: { name: string; uptime: string; health?: string; cpuPercent: number; memoryPercent: number; memoryUsed: string; memoryLimit: string; network: string }[]
+  metrics?: Record<string, MetricResult>
+  tables?: ResourceTable[] | { error: string }
+  scheduler?: SchedulerJob[] | { error: string } | null
+  registry?: { name: string; sizeBytes: number } | { error: string } | null
+}
+
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`/api/${path}`, init)
   const body = await res.json()
