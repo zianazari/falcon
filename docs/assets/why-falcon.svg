@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 484" width="960" height="484" role="img" aria-labelledby="title desc" xml:space="preserve">
+<title id="title">One public bucket, two outcomes</title>
+<desc id="desc">An engineer makes the customer exports bucket public just for a minute at 23:40. Without Falcon the audit log entry goes unread, the change is forgotten, a scanner finds the bucket on day 3 and a customer reports their data online on day 19. With Falcon the audit event reaches the pipeline, gcp-bucket-made-public matches within seconds, on-call gets a Slack alert with the runbook, and allUsers is removed at 23:52. The data was public for 19 days versus 12 minutes.</desc>
+<style>
+svg{--bg:#ffffff;--card:#f6f8fa;--ink:#1f2328;--muted:#59636e;--line:#d1d9e0;--accent:#0969da;--alert:#cf222e;
+--ok:#1a7f37;--warn:#9a6700;--code:#eef1f4;--chip:#ddf4ff}
+@media (prefers-color-scheme: dark){svg{--bg:#0d1117;--card:#151b23;--ink:#e6edf3;--muted:#9198a1;--line:#3d444d;
+--accent:#4493f8;--alert:#f85149;--ok:#3fb950;--warn:#d29922;--code:#1f2630;--chip:#0c2d6b}}
+text{white-space:pre;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;fill:var(--ink);font-size:12px}
+.bg{fill:var(--bg);stroke:var(--line)}
+.card{fill:var(--card);stroke:var(--line);stroke-width:1.2}
+.code{fill:var(--code)}
+.mono{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:11px}
+.h1{font-size:15px;font-weight:600}
+.ct{font-size:13px;font-weight:600}
+.sub{fill:var(--muted);font-size:11px}
+.muted{fill:var(--muted)}
+.accent{fill:var(--accent)}
+.alert{fill:var(--alert)}
+.ok{fill:var(--ok)}
+.warn{fill:var(--warn)}
+.b{font-weight:600}
+.num{fill:var(--accent)}
+.numt{fill:#fff;font-size:11px;font-weight:700}
+.line{stroke:var(--line);stroke-width:1.5;fill:none}
+.flow{stroke:var(--muted);stroke-width:1.5;fill:none}
+.dash{stroke-dasharray:4 4}
+.chipbg{fill:var(--chip)}
+.alertbg{fill:var(--alert)}
+.okbg{fill:var(--ok)}
+.warnbg{fill:var(--warn)}
+.accentbg{fill:var(--accent)}
+.mutedbg{fill:var(--line)}
+.bar{transform-box:fill-box;transform-origin:left center}
+.ah{fill:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}.packet{display:none}}
+@keyframes k0{0%,1.88%{opacity:0}4.06%,90.62%{opacity:1}93.12%,100%{opacity:0}}.k0{animation:k0 16s linear infinite}@keyframes k1{0%,6.88%{opacity:0}9.06%,90.62%{opacity:1}93.12%,100%{opacity:0}}.k1{animation:k1 16s linear infinite}@keyframes k2{0%,13.75%{opacity:0;transform:translateX(-8px)}15.94%,90.62%{opacity:1;transform:translateX(0)}93.12%,100%{opacity:0;transform:translateX(-8px)}}.k2{animation:k2 16s linear infinite}@keyframes k3{0%,25.00%{opacity:0;transform:translateX(-8px)}27.19%,90.62%{opacity:1;transform:translateX(0)}93.12%,100%{opacity:0;transform:translateX(-8px)}}.k3{animation:k3 16s linear infinite}@keyframes k4{0%,36.25%{opacity:0;transform:translateX(-8px)}38.44%,90.62%{opacity:1;transform:translateX(0)}93.12%,100%{opacity:0;transform:translateX(-8px)}}.k4{animation:k4 16s linear infinite}@keyframes k5{0%,47.50%{opacity:0;transform:translateX(-8px)}49.69%,90.62%{opacity:1;transform:translateX(0)}93.12%,100%{opacity:0;transform:translateX(-8px)}}.k5{animation:k5 16s linear infinite}@keyframes k6{0%,13.75%{opacity:0;transform:translateX(-8px)}15.94%,90.62%{opacity:1;transform:translateX(0)}93.12%,100%{opacity:0;transform:translateX(-8px)}}.k6{animation:k6 16s linear infinite}@keyframes k7{0%,25.00%{opacity:0;transform:translateX(-8px)}27.19%,90.62%{opacity:1;transform:translateX(0)}93.12%,100%{opacity:0;transform:translateX(-8px)}}.k7{animation:k7 16s linear infinite}@keyframes k8{0%,36.25%{opacity:0;transform:translateX(-8px)}38.44%,90.62%{opacity:1;transform:translateX(0)}93.12%,100%{opacity:0;transform:translateX(-8px)}}.k8{animation:k8 16s linear infinite}@keyframes k9{0%,47.50%{opacity:0;transform:translateX(-8px)}49.69%,90.62%{opacity:1;transform:translateX(0)}93.12%,100%{opacity:0;transform:translateX(-8px)}}.k9{animation:k9 16s linear infinite}@keyframes k10{0%,13.75%{transform:scaleX(0)}55.00%,90.62%{transform:scaleX(1)}93.12%,100%{transform:scaleX(0)}}.k10{animation:k10 16s linear infinite}@keyframes k11{0%,55.00%{opacity:0}57.19%,90.62%{opacity:1}93.12%,100%{opacity:0}}.k11{animation:k11 16s linear infinite}@keyframes k12{0%,13.75%{transform:scaleX(0)}55.00%,90.62%{transform:scaleX(1)}93.12%,100%{transform:scaleX(0)}}.k12{animation:k12 16s linear infinite}@keyframes k13{0%,55.00%{opacity:0}57.19%,90.62%{opacity:1}93.12%,100%{opacity:0}}.k13{animation:k13 16s linear infinite}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ah"/></marker></defs>
+<rect x="0.5" y="0.5" width="959" height="483" rx="12" class="bg"/>
+<text x="24" y="34" class="h1">One public bucket, two outcomes</text>
+<text x="936" y="34" class="sub" text-anchor="end">illustrative timeline</text>
+<rect x="16" y="50" width="928" height="62" rx="10" class="card"/>
+<circle cx="44" cy="81" r="14" class="warnbg"/>
+<text x="44" y="85" class="numt" text-anchor="middle">EN</text>
+<text x="70" y="74" class="b">23:40 · sam@corp.example makes a bucket public "just for a minute"</text>
+<g class="k0"><text x="70" y="94" class="mono">$ gsutil iam ch allUsers:objectViewer gs://acme-customer-exports</text></g>
+<g class="k1"><text x="928" y="94" class="mono ok" text-anchor="end">Updated IAM policy ✓</text></g>
+<path d="M244.0,114 V126" class="flow" marker-end="url(#arrow)"/>
+<rect x="16" y="128" width="456.0" height="244" rx="10" class="card"/>
+<rect x="16" y="128" width="456.0" height="4" rx="2" class="alertbg"/>
+<text x="32" y="156" class="ct alert">Without Falcon</text>
+<path d="M46,178 V340" class="line"/>
+<g class="k2"><circle cx="46" cy="178" r="6" class="alertbg"/><text x="64" y="182" class="mono muted">23:40:00</text><text x="138" y="182" class="b">The call lands in Cloud Audit Logs</text><text x="138" y="200" class="sub">a log entry nobody reads</text></g>
+<g class="k3"><circle cx="46" cy="232" r="6" class="alertbg"/><text x="64" y="236" class="mono muted">23:41</text><text x="138" y="236" class="b">"Just for a minute" is forgotten</text><text x="138" y="254" class="sub">the engineer logs off, the bucket stays public</text></g>
+<g class="k4"><circle cx="46" cy="286" r="6" class="alertbg"/><text x="64" y="290" class="mono muted">day 3</text><text x="138" y="290" class="b">A scanner finds the open bucket</text><text x="138" y="308" class="sub">customer exports download without a login</text></g>
+<g class="k5"><circle cx="46" cy="340" r="6" class="alertbg"/><text x="64" y="344" class="mono muted">day 19</text><text x="138" y="344" class="b">A customer finds their data online</text><text x="138" y="362" class="sub">the response starts from weeks-old logs</text></g>
+<path d="M716.0,114 V126" class="flow" marker-end="url(#arrow)"/>
+<rect x="488.0" y="128" width="456.0" height="244" rx="10" class="card"/>
+<rect x="488.0" y="128" width="456.0" height="4" rx="2" class="okbg"/>
+<text x="504.0" y="156" class="ct ok">With Falcon</text>
+<path d="M518.0,178 V340" class="line"/>
+<g class="k6"><circle cx="518.0" cy="178" r="6" class="okbg"/><text x="536.0" y="182" class="mono muted">23:40:00</text><text x="610.0" y="182" class="b">Audit event → Pub/Sub → pipeline</text><text x="610.0" y="200" class="sub">pushed to Cloud Run as soon as it is written</text></g>
+<g class="k7"><circle cx="518.0" cy="232" r="6" class="okbg"/><text x="536.0" y="236" class="mono muted">23:40:04</text><text x="610.0" y="236" class="b">gcp-bucket-made-public matches</text><text x="610.0" y="254" class="sub">CRITICAL · MITRE T1530 · allUsers added</text></g>
+<g class="k8"><circle cx="518.0" cy="286" r="6" class="okbg"/><text x="536.0" y="290" class="mono muted">23:40:05</text><text x="610.0" y="290" class="b">On-call gets the Slack alert</text><text x="610.0" y="308" class="sub">actor, bucket and runbook in one message</text></g>
+<g class="k9"><circle cx="518.0" cy="340" r="6" class="okbg"/><text x="536.0" y="344" class="mono muted">23:52</text><text x="610.0" y="344" class="b">allUsers removed, incident closed</text><text x="610.0" y="362" class="sub">event and alert kept in BigQuery for review</text></g>
+<text x="24" y="398" class="ct">How long the customer exports were public</text>
+<text x="24" y="426" class="sub">Without Falcon</text>
+<rect x="150" y="412" width="668" height="20" rx="4" class="mutedbg" opacity=".35"/>
+<rect x="150" y="412" width="668" height="20" rx="4" class="bar alertbg k10"/>
+<g class="k11"><text x="828" y="427" class="b alert">19 days</text></g>
+<text x="24" y="454" class="sub">With Falcon</text>
+<rect x="150" y="440" width="668" height="20" rx="4" class="mutedbg" opacity=".35"/>
+<rect x="150" y="440" width="6" height="20" rx="4" class="bar okbg k12"/>
+<g class="k13"><text x="166" y="455" class="b ok">12 minutes</text></g>
+</svg>

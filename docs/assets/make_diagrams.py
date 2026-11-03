@@ -696,9 +696,82 @@ def attackers():
                "\n".join(b), tl.style())
 
 
+# --------------------------------------------------------------------------
+# 5. Why Falcon: one public bucket, with and without Falcon.
+# --------------------------------------------------------------------------
+WITHOUT = [
+    ("23:40:00", "The call lands in Cloud Audit Logs", "a log entry nobody reads"),
+    ("23:41", "\"Just for a minute\" is forgotten", "the engineer logs off, the bucket stays public"),
+    ("day 3", "A scanner finds the open bucket", "customer exports download without a login"),
+    ("day 19", "A customer finds their data online", "the response starts from weeks-old logs"),
+]
+WITH = [
+    ("23:40:00", "Audit event → Pub/Sub → pipeline", "pushed to Cloud Run as soon as it is written"),
+    ("23:40:04", "gcp-bucket-made-public matches", "CRITICAL · MITRE T1530 · allUsers added"),
+    ("23:40:05", "On-call gets the Slack alert", "actor, bucket and runbook in one message"),
+    ("23:52", "allUsers removed, incident closed", "event and alert kept in BigQuery for review"),
+]
+
+
+def why():
+    W, H = 960, 484
+    step = 1.8
+    first = 2.2
+    tl = Timeline(16, 14.5)
+    b = [t(24, 34, "One public bucket, two outcomes", "h1"),
+         t(W - 24, 34, "illustrative timeline", "sub", "end")]
+
+    # The shared mistake.
+    b.append(rect(16, 50, W - 32, 62, "card", 10))
+    b.append('<circle cx="44" cy="81" r="14" class="warnbg"/>')
+    b.append(t(44, 85, "EN", "numt", "middle"))
+    b.append(t(70, 74, "23:40 · sam@corp.example makes a bucket public \"just for a minute\"", "b"))
+    b.append(f'<g class="{tl.show(0.3)}">{t(70, 94, "$ gsutil iam ch allUsers:objectViewer gs://acme-customer-exports", "mono")}</g>')
+    b.append(f'<g class="{tl.show(1.1)}">{t(W - 32, 94, "Updated IAM policy ✓", "mono ok", "end")}</g>')
+
+    LW, LY, LH = (W - 48) / 2, 128, 244
+    lanes = [(16, "Without Falcon", "alert", "alertbg", WITHOUT),
+             (16 + LW + 16, "With Falcon", "ok", "okbg", WITH)]
+    for x, head, fg, bg, steps in lanes:
+        b.append(f'<path d="M{x + LW / 2},{LY - 14} V{LY - 2}" class="flow" marker-end="url(#arrow)"/>')
+        b.append(rect(x, LY, LW, LH, "card", 10))
+        b.append(rect(x, LY, LW, 4, bg, 2))
+        b.append(t(x + 16, LY + 28, head, "ct " + fg))
+        rail = x + 30
+        b.append(f'<path d="M{rail},{LY + 50} V{LY + 50 + 3 * 54}" class="line"/>')
+        for i, (when, what, sub) in enumerate(steps):
+            y = LY + 50 + i * 54
+            g = tl.show(first + i * step, "opacity:0;transform:translateX(-8px)", "opacity:1;transform:translateX(0)")
+            b.append(f'<g class="{g}"><circle cx="{rail}" cy="{y}" r="6" class="{bg}"/>'
+                     f'{t(rail + 18, y + 4, when, "mono muted")}{t(rail + 92, y + 4, what, "b")}'
+                     f'{t(rail + 92, y + 22, sub, "sub")}</g>')
+
+    # How long the data stayed exposed.
+    by = LY + LH + 22
+    b.append(t(24, by + 4, "How long the customer exports were public", "ct"))
+    bars = [("Without Falcon", "alertbg", W - 32 - 150 - 110, "19 days", "alert"),
+            ("With Falcon", "okbg", 6, "12 minutes", "ok")]
+    end_grow = first + 3 * step + 1.2
+    for i, (label, bg, bw, txt, fg) in enumerate(bars):
+        y = by + 18 + i * 28
+        b.append(t(24, y + 14, label, "sub"))
+        b.append(rect(150, y, W - 32 - 150 - 110, 20, "mutedbg", 4, ' opacity=".35"'))
+        grow = tl.show(first, "transform:scaleX(0)", "transform:scaleX(1)", end_grow - first)
+        b.append(rect(150, y, bw, 20, f"bar {bg} {grow}", 4))
+        b.append(f'<g class="{tl.show(end_grow)}">{t(150 + bw + 10, y + 15, txt, "b " + fg)}</g>')
+
+    return svg(W, H, "One public bucket, two outcomes",
+               "An engineer makes the customer exports bucket public just for a minute at 23:40. Without Falcon "
+               "the audit log entry goes unread, the change is forgotten, a scanner finds the bucket on day 3 and "
+               "a customer reports their data online on day 19. With Falcon the audit event reaches the pipeline, "
+               "gcp-bucket-made-public matches within seconds, on-call gets a Slack alert with the runbook, and "
+               "allUsers is removed at 23:52. The data was public for 19 days versus 12 minutes.",
+               "\n".join(b), tl.style())
+
+
 os.makedirs(OUT, exist_ok=True)
 for name, fn in [("architecture", architecture), ("detection-flow", detection), ("vulnerability-lifecycle", triage),
-                 ("attacker-scenarios", attackers)]:
+                 ("attacker-scenarios", attackers), ("why-falcon", why)]:
     with open(os.path.join(OUT, f"{name}.svg"), "w") as f:
         f.write(fn())
     print("wrote", name)

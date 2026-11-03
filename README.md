@@ -39,6 +39,11 @@ the wrong identity**: a phished session, a leaked service account key, or an eng
 a bucket public "just for a minute". GCP records every one of those calls in its audit logs, but
 logs nobody reads are not detection, and switching the logging off is often an attacker's first move.
 
+<p align="center">
+  <img src="docs/assets/why-falcon.svg" width="100%"
+       alt="Animated: an engineer makes the customer-exports bucket public just for a minute at 23:40. Without Falcon, the audit log entry goes unread, the change is forgotten, a scanner finds the bucket on day 3 and a customer finds their data online on day 19. With Falcon, the audit event reaches the pipeline, gcp-bucket-made-public matches within seconds, on-call gets a Slack alert with the runbook, and allUsers is removed at 23:52. The data was public for 19 days without Falcon and 12 minutes with it.">
+</p>
+
 The opposite problem is too many alerts. Dependabot and code scanning open hundreds of findings.
 Ranked by CVSS alone, many look critical, nobody clearly owns them, and the one being exploited
 in the wild gets lost among the rest.
