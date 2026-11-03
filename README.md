@@ -391,6 +391,38 @@ node triager/dist/cli.js check --repo <owner/name> --max-priority P2
 
 ## Architecture
 
+Falcon is neither one monolith nor a set of microservices. It is a small event-driven system:
+a few independently deployed parts that never call each other directly, connected through
+managed services instead.
+
+| Part | Shape | Connects through |
+|---|---|---|
+| Log pipeline (Go) | Stateless service on Cloud Run | Reads from Pub/Sub, writes to BigQuery |
+| Vulnerability triager (TypeScript) | Batch CLI job in GitHub Actions | GitHub API only; it shares nothing with the pipeline |
+| Console | Read-only UI with a small API | Reads BigQuery and GCP APIs |
+| Canary | Two Cloud Scheduler jobs | The only direct call: Scheduler to the pipeline's `/canary/check` |
+
+**Inside the pipeline: a modular monolith.** It is one binary built as a pipes-and-filters
+chain, `normalize → detect → sink → alert`, with each stage in its own Go package. The `Sink`
+and `Notifier` interfaces are the seams, which is why the same code runs against BigQuery in
+the cloud and plain files locally. The stages stay in one process on purpose: an event must be
+stored before Pub/Sub is acknowledged, and splitting the stages into services would add a
+network hop and a queue with its own delivery semantics at every boundary, for one team and a
+small event volume. Detections are data, so a new rule is a YAML file, not a new service.
+
+**Known coupling.**
+- The event schema exists three times: the Go struct, the BigQuery schema and the console's
+  TypeScript types. Changing one without the others breaks quietly.
+- BigQuery is a shared store: the pipeline writes it and the console reads it. That is
+  acceptable because the console only reads, but it depends on the schema.
+- The redelivery cache lives in each Cloud Run instance's memory. With several instances a
+  duplicate can be processed twice; BigQuery's insert IDs only deduplicate on a best-effort basis.
+- The canary check runs inside the pipeline, so it stops when the pipeline does.
+
+**When to split.** Each new log source (AWS, GitHub audit logs) would get its own normalizer
+behind its own topic. A slow notifier would move behind a queue so acknowledgements never wait
+for Slack. Higher volume would move deduplication into a shared store such as Firestore.
+
 [docs/architecture.html](docs/architecture.html) describes every part, its technology, how the parts connect and how data moves between them. GitHub shows HTML as source, so download the file or open it from a clone.
 
 ## Repository layout
