@@ -12,6 +12,27 @@ Falcon does two jobs a small product security team should not do by hand:
 
 Everything runs locally with one command, and deploys to GCP with Terraform and keyless CI.
 
+## Technology
+
+<p align="left">
+  <img src="https://skillicons.dev/icons?i=go,ts,nodejs,react,vite,tailwind,terraform,gcp,docker,githubactions,py&theme=dark" alt="Go, TypeScript, Node.js, React, Vite, Tailwind CSS, Terraform, Google Cloud, Docker, GitHub Actions and Python" />
+  <img src="https://img.shields.io/badge/Cloud%20Run-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white" alt="Cloud Run" />
+  <img src="https://img.shields.io/badge/BigQuery-669DF6?style=for-the-badge&logo=googlebigquery&logoColor=white" alt="BigQuery" />
+  <img src="https://img.shields.io/badge/Pub%2FSub-4285F4?style=for-the-badge&logo=googlepubsub&logoColor=white" alt="Pub/Sub" />
+  <img src="https://img.shields.io/badge/shadcn%2Fui-000000?style=for-the-badge&logo=shadcnui&logoColor=white" alt="shadcn/ui" />
+  <img src="https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white" alt="Vitest" />
+</p>
+
+| Part | Built with |
+|---|---|
+| Log pipeline and attack simulator | Go 1.25, BigQuery client, distroless Docker image |
+| Detection rules | YAML rules with JSON fixtures, run by the Go engine |
+| Vulnerability triager | TypeScript on Node.js, Octokit, EPSS and CISA KEV data, Vitest |
+| Console | React 19, Vite, Tailwind CSS, shadcn/ui, Recharts, and a small Node.js API |
+| Infrastructure | Terraform on Google Cloud: Cloud Run, Pub/Sub, BigQuery, Cloud Logging, Cloud Scheduler, Artifact Registry |
+| CI and checks | GitHub Actions with keyless Workload Identity Federation, tflint, Checkov |
+| Diagrams | Python, generating the animated SVGs |
+
 <p align="center">
   <img src="docs/assets/architecture.svg" width="100%"
        alt="Animated architecture. Detect lane: Cloud Audit Logs flow through a log sink and Pub/Sub into the Go pipeline on Cloud Run, then to BigQuery; a malicious event turns red, matches a rule and goes to Slack; a malformed message drops into the dead-letter topic. Triage lane: Dependabot, EPSS/KEV and CODEOWNERS feed the TypeScript triager, which manages GitHub issues and a CI gate.">
